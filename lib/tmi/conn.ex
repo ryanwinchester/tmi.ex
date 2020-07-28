@@ -9,6 +9,7 @@ defmodule TMI.Conn do
     user: nil,
     name: nil,
     client: nil,
+    caps: [],
     channels: []
   )
 
@@ -20,6 +21,7 @@ defmodule TMI.Conn do
           user: String.t(),
           name: String.t(),
           client: pid,
+          caps: [String.t() | atom | charlist],
           channels: [String.t()]
         }
 
@@ -28,7 +30,7 @@ defmodule TMI.Conn do
 
   ## Example
 
-      iex> TMI.Conn.new(:some_pid, "user", "pass", ["mychat"])
+      iex> TMI.Conn.new(:some_pid, "user", "pass", ["mychat"], [])
       %TMI.Conn{
         server: "irc.chat.twitch.tv",
         port: 6697,
@@ -37,17 +39,19 @@ defmodule TMI.Conn do
         user: "user",
         pass: "pass",
         client: :some_pid,
+        caps: [],
         channels: ["#mychat"]
       }
 
   """
-  def new(client, user, pass, chats) do
+  def new(client, user, pass, chats, caps) do
     %__MODULE__{
       client: client,
       name: user,
       nick: user,
       user: user,
       pass: pass,
+      caps: caps,
       channels: Enum.map(chats, &chat_to_channel/1)
     }
   end

@@ -25,7 +25,7 @@ You'll also need an OAuth token for the password.
 
 The simplest method to get an OAuth token (while logged in to the account your bot will be) use the [Twitch Chat OAuth Password Generator](https://twitchapps.com/tmi/).
 
-To connect, start the supervisor with:
+To connect, start `TMI` with:
 
 ```elixir
 config = [
@@ -34,7 +34,14 @@ config = [
   chats: ["mychat"]
 ]
 
-{:ok, _pid} = TMI.Supervisor.start_link(config)
+{:ok, _pid} = TMI.start_link(config)
 ```
+
+### Config options
+
+ * `:user` - Twitch username of your bot user. (lowercase)
+ * `:pass` - OAuth token to use as a password, prefixed with `oauth:`.
+ * `:chats` - The list of chats to join. (lowercase)
+ * `:capabilities` - An optional list of `:tmi` capabilities, defined [here](https://dev.twitch.tv/docs/irc/guide#twitch-irc-capabilities). Can be any of: `"membership"`, `"tags"`, and `"commands"`. (lowercase)
 
 #### TODO: All the typical bot stuff.

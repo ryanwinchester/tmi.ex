@@ -24,13 +24,8 @@ defmodule TMI.Handlers.LoginHandler do
   @impl true
   def handle_info(:logged_in, conn) do
     Logger.debug("Logged in to #{conn.server}:#{conn.port}")
-
-    Logger.debug("Requesting capabilities...")
-    Enum.each(@tmi_capabilities, &request_capabilities(conn.client, &1))
-
-    Logger.debug("Joining channels...")
-    Enum.map(conn.channels, &ExIRC.Client.join(conn.client, &1))
-
+    Enum.each(conn.caps, &request_capabilities(conn.client, &1))
+    Enum.each(conn.channels, &join_channel(conn.client, &1))
     {:noreply, conn}
   end
 
@@ -40,19 +35,18 @@ defmodule TMI.Handlers.LoginHandler do
     {:noreply, conn}
   end
 
-  # Twitch Membership capability
-  #     < CAP REQ :twitch.tv/membership
-  #     > :tmi.twitch.tv CAP * ACK :twitch.tv/membership
-  #
-  # Twitch Tags capability
-  #     < CAP REQ :twitch.tv/tags
-  #     > :tmi.twitch.tv CAP * ACK :twitch.tv/tags
-  #
-  # Twitch Commands capability
-  #     < CAP REQ :twitch.tv/commands
-  #     > :tmi.twitch.tv CAP * ACK :twitch.tv/commands
-  defp request_capabilities(client, cap) do
+  ## Helpers
+
+  defp request_capabilities(client, cap) when cap in @tmi_capabilities do
+    Logger.debug("Requesting #{cap} capability...")
     cmd = ExIRC.Commands.command!('CAP REQ :twitch.tv/#{cap}')
     :ok = ExIRC.Client.cmd(client, cmd)
+  end
+
+  defp request_capabilities(_client, cap), do: raise("Invalid capability #{cap}")
+
+  defp join_channel(client, channel) do
+    Logger.debug("Joining channel #{channel}...")
+    :ok = ExIRC.Client.join(client, channel)
   end
 end

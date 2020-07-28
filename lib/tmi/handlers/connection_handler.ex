@@ -14,7 +14,7 @@ defmodule TMI.Handlers.ConnectionHandler do
 
   @impl GenServer
   def init(%Conn{} = conn) do
-    Logger.debug("Connecting to #{conn.server}:#{conn.port}")
+    Logger.debug("Connecting to #{conn.server}:#{conn.port}...")
 
     ExIRC.Client.add_handler(conn.client, self())
     ExIRC.Client.connect_ssl!(conn.client, conn.server, conn.port)
@@ -23,9 +23,8 @@ defmodule TMI.Handlers.ConnectionHandler do
   end
 
   @impl GenServer
-  def handle_info({:connected, server, port}, conn) do
-    Logger.debug("Connected to #{server}:#{port}. Logging in as #{conn.nick}")
-    Logger.debug("Logging in as #{conn.nick}..")
+  def handle_info({:connected, _server, _port}, conn) do
+    Logger.debug("Connected - Logging in as #{conn.nick}...")
     ExIRC.Client.logon(conn.client, conn.pass, conn.nick, conn.user, conn.name)
     {:noreply, conn}
   end
