@@ -8,7 +8,6 @@ defmodule TMI.MixProject do
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-
       name: "tmi.ex",
       source_url: "https://github.com/ryanwinchester/tmi.ex",
       homepage_url: "https://github.com/ryanwinchester/tmi.ex",

@@ -28,11 +28,13 @@ The simplest method to get an OAuth token (while logged in to the account your b
 To connect, start the supervisor with:
 
 ```elixir
-user = "mybotusername"
-pass = "oauth:mybotoauthtoken"
-chats = ["mychat", "myfriendschat"]
+config = [
+  user: "mybotusername",
+  pass: "oauth:mybotoauthtoken",
+  chats: ["mychat"]
+]
 
-{:ok, _pid} = TMI.Supervisor.start_link(user, pass, chats)
+{:ok, _pid} = TMI.Supervisor.start_link(config)
 ```
 
 #### TODO: All the typical bot stuff.
