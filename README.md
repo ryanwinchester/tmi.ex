@@ -23,19 +23,9 @@ Documentation can be found at [https://hexdocs.pm/tmi/readme.html](https://hexdo
 You can use your own Twitch username, but it is recommended to make a new twitch account just for your bot.
 You'll also need an OAuth token for the password.
 
-The simplest method to get an OAuth token (while logged in to the account your bot will be) use the [Twitch Chat OAuth Password Generator](https://twitchapps.com/tmi/).
+The simplest method to get an OAuth token (while logged in to the account your bot will use), use the [Twitch Chat OAuth Password Generator](https://twitchapps.com/tmi/).
 
-To connect, start `TMI` with:
-
-```elixir
-config = [
-  user: "mybotusername",
-  pass: "oauth:mybotoauthtoken",
-  chats: ["mychat"]
-]
-
-{:ok, _pid} = TMI.start_link(config)
-```
+First we need to go over the config options.
 
 ### Config options
 
@@ -51,4 +41,24 @@ config = [
  * `commands` - Gives you some Twitch-specific commands. If your bot plans to read commands, it must
    also use the `tags` capability because most commands are less useful or even meaningless without tags. [docs](https://dev.twitch.tv/docs/irc/commands)
 
+
+Next, we can connect. Start `TMI` with:
+
+```elixir
+config = [
+  user: "mybotusername",
+  pass: "oauth:mybotoauthtoken",
+  chats: ["mychat"]
+]
+
+TMI.supervisor_start_link(config)
+```
+
+To send a message
+
+```elixir
+TMI.send_msg("mychat", "Hello World")
+```
+
 #### TODO: All the typical bot stuff.
+
