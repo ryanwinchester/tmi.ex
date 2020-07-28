@@ -11,7 +11,7 @@ The package can be installed by adding `tmi` to your list of dependencies in `mi
 ```elixir
 def deps do
   [
-    {:tmi, "~> 0.1.0"},
+    {:tmi, "~> 0.2.0"},
   ]
 end
 ```
@@ -43,5 +43,12 @@ config = [
  * `:pass` - OAuth token to use as a password, prefixed with `oauth:`.
  * `:chats` - The list of chats to join. (lowercase)
  * `:capabilities` - An optional list of `:tmi` capabilities, defined [here](https://dev.twitch.tv/docs/irc/guide#twitch-irc-capabilities). Can be any of: `"membership"`, `"tags"`, and `"commands"`. (lowercase)
+
+#### Capabilities
+
+ * `membership` - Shows `JOIN`s and `PART`s, so you can see when a user joins or leaves chat. [docs](https://dev.twitch.tv/docs/irc/membership)
+ * `tags` - Will give you a bunch of additional channel and user state data (badges, etc). [docs](https://dev.twitch.tv/docs/irc/tags)
+ * `commands` - Gives you some Twitch-specific commands. If your bot plans to read commands, it must
+   also use the `tags` capability because most commands are less useful or even meaningless without tags. [docs](https://dev.twitch.tv/docs/irc/commands)
 
 #### TODO: All the typical bot stuff.
