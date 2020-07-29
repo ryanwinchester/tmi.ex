@@ -54,7 +54,7 @@ defmodule TMI do
   end
 
   @doc """
-  Determine if the provided client process has an open connection to a server.
+  Determine if the client process has an open connection to a server.
   """
   @spec is_connected?() :: true | false
   def is_connected? do
@@ -62,7 +62,7 @@ defmodule TMI do
   end
 
   @doc """
-  Determine if the provided client is logged on to a server.
+  Determine if the client is logged on to a server.
   """
   @spec is_logged_on?() :: true | false
   def is_logged_on? do

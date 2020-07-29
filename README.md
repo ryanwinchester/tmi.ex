@@ -2,7 +2,7 @@
 
 Connect to Twitch chat with Elixir.
 
-Inspired by [tmi.js](https://github.com/tmijs/tmi.js).
+The name is inspired by [tmi.js](https://github.com/tmijs/tmi.js).
 
 ## Installation
 
@@ -11,7 +11,7 @@ The package can be installed by adding `tmi` to your list of dependencies in `mi
 ```elixir
 def deps do
   [
-    {:tmi, "~> 0.2.0"},
+    {:tmi, "~> 0.3.0"},
   ]
 end
 ```
@@ -43,7 +43,7 @@ end
 
     handle_connected(server, port)
     handle_logged_in()
-    handle_login_failed(reason :: atom)
+    handle_login_failed(reason)
     handle_disconnected()
     handle_join(chat)
     handle_join(chat, user)
@@ -100,8 +100,14 @@ children = [
 ```
 
 
-To send a message:
+The handler is for handling incoming messages, whispers, etc.
+
+However, what if you want to interact?
 
 ```elixir
 TMI.message("mychat", "Hello World")
+
+TMI.whisper("some_user", "Hey there")
+
+TMI.action("mychat", "jumps around frantically")
 ```
