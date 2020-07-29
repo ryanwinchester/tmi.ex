@@ -4,6 +4,7 @@ defmodule TMI.Handlers.ConnectionHandler do
 
   require Logger
 
+  alias TMI.Client
   alias TMI.Conn
 
   def start_link(%Conn{} = conn) do
@@ -14,23 +15,24 @@ defmodule TMI.Handlers.ConnectionHandler do
 
   @impl GenServer
   def init(%Conn{} = conn) do
-    Logger.debug("Connecting to #{conn.server}:#{conn.port}...")
+    Logger.debug("[TMI] Connecting to #{conn.server}:#{conn.port}...")
 
-    ExIRC.Client.add_handler(conn.client, self())
-    ExIRC.Client.connect_ssl!(conn.client, conn.server, conn.port)
+    conn
+    |> Client.add_handler(self())
+    |> Client.connect_ssl!()
 
     {:ok, conn}
   end
 
   @impl GenServer
   def handle_info({:connected, _server, _port}, conn) do
-    Logger.debug("Connected - Logging in as #{conn.nick}...")
-    ExIRC.Client.logon(conn.client, conn.pass, conn.nick, conn.user, conn.name)
+    Logger.debug("[TMI] Connected - Logging in as #{conn.nick}...")
+    Client.logon(conn)
     {:noreply, conn}
   end
 
   def handle_info(:disconnected, conn) do
-    Logger.debug("Disconnected from #{conn.server}:#{conn.port}")
+    Logger.debug("[TMI] Disconnected from #{conn.server}:#{conn.port}")
     {:stop, :normal, conn}
   end
 
@@ -42,9 +44,12 @@ defmodule TMI.Handlers.ConnectionHandler do
   @impl GenServer
   def terminate(_, conn) do
     # Quit the channels and close the underlying client connection when the process is terminating
-    Logger.warn("Terminating...")
-    ExIRC.Client.quit(conn.client, "Goodbye, cruel world.")
-    ExIRC.Client.stop!(conn.client)
+    Logger.warn("[TMI] Terminating...")
+
+    conn
+    |> Client.quit("[TMI] Goodbye, cruel world.")
+    |> Client.stop!()
+
     :ok
   end
 end

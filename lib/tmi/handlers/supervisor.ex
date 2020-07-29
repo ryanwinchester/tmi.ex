@@ -13,11 +13,13 @@ defmodule TMI.Supervisor do
   @impl true
   def init(config) do
     conn = TMI.build_conn(config)
+    handler = Keyword.get(config, :handler, TMI.DefaultHandler)
 
     children = [
       {TMI, conn},
       {TMI.Handlers.ConnectionHandler, conn},
-      {TMI.Handlers.LoginHandler, conn}
+      {TMI.Handlers.LoginHandler, conn},
+      {TMI.Handlers.MessageHandler, {conn, handler}}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

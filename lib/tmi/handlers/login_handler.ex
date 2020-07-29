@@ -5,48 +5,49 @@ defmodule TMI.Handlers.LoginHandler do
 
   require Logger
 
+  alias TMI.Client
   alias TMI.Conn
 
   @tmi_capabilities ['membership', 'tags', 'commands']
 
   def start_link(%Conn{} = conn) do
-    GenServer.start_link(__MODULE__, conn)
+    GenServer.start_link(__MODULE__, conn, name: __MODULE__)
   end
 
   ## Callbacks
 
   @impl true
   def init(%Conn{} = conn) do
-    ExIRC.Client.add_handler(conn.client, self())
+    Client.add_handler(conn, self())
     {:ok, conn}
   end
 
   @impl true
   def handle_info(:logged_in, conn) do
-    Logger.debug("Logged in to #{conn.server}:#{conn.port}")
-    Enum.each(conn.caps, &request_capabilities(conn.client, &1))
-    Enum.each(conn.channels, &join_channel(conn.client, &1))
+    Logger.debug("[TMI] Logged in to #{conn.server}:#{conn.port}")
+    Enum.each(conn.caps, &request_capabilities(conn, &1))
+    Enum.each(conn.chats, &join_chat(conn, &1))
     {:noreply, conn}
   end
 
-  # Catch-all for messages you don't care about
-  def handle_info(msg, conn) do
-    Logger.debug("Unhandled msg: #{inspect(msg)}")
-    {:noreply, conn}
-  end
+  # Catch-all for messages we don't care about.
+  def handle_info(_msg, conn), do: {:noreply, conn}
 
   ## Helpers
 
-  defp request_capabilities(client, cap) when cap in @tmi_capabilities do
-    Logger.debug("Requesting #{cap} capability...")
-    cmd = ExIRC.Commands.command!('CAP REQ :twitch.tv/#{cap}')
-    :ok = ExIRC.Client.cmd(client, cmd)
+  defp request_capabilities(conn, cap) when cap in @tmi_capabilities do
+    Logger.debug("[TMI] Requesting #{cap} capability...")
+    Client.command(conn, 'CAP REQ :twitch.tv/#{cap}')
   end
 
-  defp request_capabilities(_client, cap), do: raise("Invalid capability #{cap}")
+  # If you know what you're doing, you can request other capabilities ¯\_(ツ)_/¯
+  defp request_capabilities(conn, cap) do
+    Logger.warn("[TMI] Requesting NON-TMI capability: #{cap}...")
+    Client.command(conn, to_charlist(cap))
+  end
 
-  defp join_channel(client, channel) do
-    Logger.debug("Joining channel #{channel}...")
-    :ok = ExIRC.Client.join(client, channel)
+  defp join_chat(conn, chat) do
+    Logger.debug("[TMI] Joining chat #{chat}...")
+    Client.join(conn, chat)
   end
 end

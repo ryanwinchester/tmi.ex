@@ -10,19 +10,19 @@ defmodule TMI.Conn do
     name: nil,
     client: nil,
     caps: [],
-    channels: []
+    chats: []
   )
 
   @type t :: %__MODULE__{
           server: String.t(),
           port: integer,
           pass: String.t(),
+          name: String.t(),
           nick: String.t(),
           user: String.t(),
-          name: String.t(),
           client: pid,
           caps: [String.t() | atom | charlist],
-          channels: [String.t()]
+          chats: [String.t()]
         }
 
   @doc """
@@ -40,7 +40,7 @@ defmodule TMI.Conn do
         pass: "pass",
         client: :some_pid,
         caps: [],
-        channels: ["#mychat"]
+        chats: ["mychat"]
       }
 
   """
@@ -52,22 +52,7 @@ defmodule TMI.Conn do
       user: user,
       pass: pass,
       caps: caps,
-      channels: Enum.map(chats, &chat_to_channel/1)
+      chats: chats
     }
   end
-
-  @doc """
-  Map chat names to channel names with the prepended "#".
-
-  ## Examples
-
-      iex> TMI.Conn.chat_to_channel("#foo")
-      "#foo"
-
-      iex> TMI.Conn.chat_to_channel("bar")
-      "#bar"
-
-  """
-  def chat_to_channel("#" <> _ = channel), do: channel
-  def chat_to_channel(chat), do: "#" <> chat
 end
