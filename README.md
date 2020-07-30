@@ -32,9 +32,17 @@ defmodule MyHandler do
   use TMI.Handler
 
   @impl true
+  def handle_message("!" <> command, sender, chat) do
+    case command do
+      "dice" -> TMI.message(chat, Enum.random(~w(⚀ ⚁ ⚂ ⚃ ⚄ ⚅)))
+      "echo " <> rest -> TMI.message(chat, rest)
+      "dance" -> TMI.action(chat, "dances for #{sender}")
+      _ -> TMI.message(chat, "unrecognized command")
+    end
+  end
+
   def handle_message(message, sender, chat) do
-    # Do something with the message.
-    IO.puts("Message from #{sender} in #{chat}: #{message}")
+    Logger.debug("Message in #{chat} from #{sender}: #{message}")
   end
 end
 ```
