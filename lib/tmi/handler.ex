@@ -114,7 +114,23 @@ defmodule TMI.Handler do
         nil
       end
 
-      defoverridable TMI.Handler
+      defoverridable(
+        handle_connected: 2,
+        handle_logged_in: 0,
+        handle_login_failed: 1,
+        handle_disconnected: 0,
+        handle_join: 1,
+        handle_join: 2,
+        handle_part: 1,
+        handle_part: 2,
+        handle_kick: 2,
+        handle_kick: 3,
+        handle_whisper: 2,
+        handle_message: 3,
+        handle_mention: 3,
+        handle_action: 3,
+        handle_unrecognized: 1
+      )
     end
   end
 end
