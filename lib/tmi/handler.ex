@@ -33,11 +33,20 @@ defmodule TMI.Handler do
 
   @callback handle_unrecognized(msg :: any) :: any
 
-  defmacro __using__(_) do
+  defmacro __using__(opts \\ []) do
+    command_prefix = Keyword.get(opts, :command_prefix, "!")
+
     quote do
       @behaviour TMI.Handler
 
+      Module.register_attribute __MODULE__, :message_handlers, accumulate: true
+      Module.register_attribute __MODULE__, :command_handlers, accumulate: true
+
+      import unquote(__MODULE__)
+
       require Logger
+
+      @command_prefix unquote(command_prefix)
 
       @impl true
       def handle_connected(server, port) do
@@ -131,6 +140,73 @@ defmodule TMI.Handler do
         handle_action: 3,
         handle_unrecognized: 1
       )
+    end
+
+    @before_compile unquote(__MODULE__)
+  end
+
+  defmacro __before_compile__(env) do
+    message_handlers = Module.get_attribute(env.module, :message_handler)
+    command_handlers = Module.get_attribute(env.module, :command_handler)
+    command_prefix = Module.get_attribute(env.module, :command_prefix)
+
+    quote do
+      @impl true
+      def handle_message(unquote(command_prefix) <> rest, sender, chat) do
+        command = String.split(rest, " ", parts: 2) do
+        for {regex, handler} <- @command_handlers do
+          if Regex.match?(regex, Enum.at(command, 0)) do
+            apply(__MODULE__, handler, [regex, command, sender, chat])
+          end
+        end
+      end
+
+      def handle_message(message, sender, chat) do
+        for {regex, handler} <- @message_handlers do
+          if Regex.match?(regex, Enum.at(command, 0)) do
+            apply(__MODULE__, handler, [%{matches: get_matches(regex, message), message, sender, chat}])
+          end
+        end
+      end
+    end
+  end
+
+  defmacro message(regex, msg \\ Macro.escape(%{}), do: block) do
+    func_name = unique_func_name("message_handler")
+    quote do
+      @message_handlers {unquote(regex), unquote(func_name)}
+      def unquote(func_name)(message, sender, chat, unquote(state)) do
+        unquote(block)
+      end
+    end
+  end
+
+  defmacro command(regex, msg \\ Macro.escape(%{}), do: block) do
+    func_name = unique_func_name("command_handler")
+    quote do
+      @command_handlers {unquote(regex), unquote(func_name)}
+      def unquote(func_name)(regex, [command], sender, chat) do
+        unquote(block)
+      end
+      def unquote(func_name)(regex, [command, message], sender, chat) do
+        unquote(block)
+      end
+    end
+  end
+
+  defp unique_func_name(type) do
+    String.to_atom("#{type}_#{System.unique_integer([:positive, :monotonic])}")
+  end
+
+  defp get_matches(regex, message) do
+    case Regex.names(regex) do
+      [] ->
+        matches = Regex.run(regex, text)
+        Enum.reduce(Enum.with_index(matches), %{}, fn {match, index}, acc ->
+          Map.put(acc, index, match)
+        end)
+      _ ->
+        Regex.named_captures(regex, text)
     end
   end
 end
