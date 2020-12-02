@@ -1,6 +1,8 @@
 defmodule TMI.Client do
   alias TMI.Conn
 
+  require Logger
+
   defdelegate start_link!(), to: ExIRC
 
   @doc """
@@ -42,7 +44,7 @@ defmodule TMI.Client do
   Add a new event handler process.
   """
   def add_handler(%Conn{} = conn, handler) do
-    :ok = ExIRC.Client.add_handler(conn.client, handler)
+    log_error(ExIRC.Client.add_handler(conn.client, handler), :add_handler)
     conn
   end
 
@@ -50,7 +52,7 @@ defmodule TMI.Client do
   Add a new event handler process, asynchronously.
   """
   def add_handler_async(%Conn{} = conn, handler) do
-    :ok = ExIRC.Client.add_handler_async(conn.client, handler)
+    log_error(ExIRC.Client.add_handler_async(conn.client, handler), :add_handler_async)
     conn
   end
 
@@ -58,7 +60,7 @@ defmodule TMI.Client do
   Remove an event handler process.
   """
   def remove_handler(%Conn{} = conn, handler) do
-    :ok = ExIRC.Client.remove_handler(conn.client, handler)
+    log_error(ExIRC.Client.remove_handler(conn.client, handler), :remove_handler)
     conn
   end
 
@@ -66,7 +68,7 @@ defmodule TMI.Client do
   Remove an event handler process, asynchronously
   """
   def remove_handler_async(%Conn{} = conn, handler) do
-    :ok = ExIRC.Client.remove_handler_async(conn.client, handler)
+    log_error(ExIRC.Client.remove_handler_async(conn.client, handler), :remove_handler_async)
     conn
   end
 
@@ -74,7 +76,7 @@ defmodule TMI.Client do
   Connect to a server with the provided server and port.
   """
   def connect!(%Conn{} = conn) do
-    :ok = ExIRC.Client.connect!(conn.client, conn.server, conn.port)
+    log_error(ExIRC.Client.connect!(conn.client, conn.server, conn.port), :connect)
     conn
   end
 
@@ -82,7 +84,7 @@ defmodule TMI.Client do
   Connect to a server with the provided server and port via SSL.
   """
   def connect_ssl!(%Conn{} = conn) do
-    :ok = ExIRC.Client.connect_ssl!(conn.client, conn.server, conn.port)
+    log_error(ExIRC.Client.connect_ssl!(conn.client, conn.server, conn.port), :connect_ssl)
     conn
   end
 
@@ -90,7 +92,7 @@ defmodule TMI.Client do
   Logon to a server.
   """
   def logon(%Conn{} = conn) do
-    :ok = ExIRC.Client.logon(conn.client, conn.pass, conn.nick, conn.user, conn.name)
+    log_error(ExIRC.Client.logon(conn.client, conn.pass, conn.nick, conn.user, conn.name), :logon)
     conn
   end
 
@@ -98,7 +100,7 @@ defmodule TMI.Client do
   Join a chat.
   """
   def join(%Conn{} = conn, chat) do
-    :ok = ExIRC.Client.join(conn.client, chat_to_channel(chat))
+    log_error(ExIRC.Client.join(conn.client, chat_to_channel(chat)), :join)
     conn
   end
 
@@ -106,7 +108,7 @@ defmodule TMI.Client do
   Leave a chat.
   """
   def part(%Conn{} = conn, chat) do
-    :ok = ExIRC.Client.part(conn.client, chat_to_channel(chat))
+    log_error(ExIRC.Client.part(conn.client, chat_to_channel(chat)), :part)
     conn
   end
 
@@ -114,7 +116,7 @@ defmodule TMI.Client do
   Quit the server.
   """
   def quit(%Conn{} = conn, msg) do
-    :ok = ExIRC.Client.quit(conn.client, msg)
+    log_error(ExIRC.Client.quit(conn.client, msg), :quit)
     conn
   end
 
@@ -122,7 +124,7 @@ defmodule TMI.Client do
   Stop the client process.
   """
   def stop!(%Conn{} = conn) do
-    :ok = ExIRC.Client.stop!(conn.client)
+    log_error(ExIRC.Client.stop!(conn.client), :stop)
     conn
   end
 
@@ -131,7 +133,7 @@ defmodule TMI.Client do
   """
   def command(%Conn{} = conn, command) do
     cmd = ExIRC.Commands.command!(command)
-    :ok = ExIRC.Client.cmd(conn.client, cmd)
+    log_error(ExIRC.Client.cmd(conn.client, cmd), :command)
     conn
   end
 
@@ -139,7 +141,7 @@ defmodule TMI.Client do
   Send a chat message.
   """
   def message(%Conn{} = conn, chat, message) do
-    :ok = ExIRC.Client.msg(conn.client, :privmsg, chat_to_channel(chat), message)
+    log_error(ExIRC.Client.msg(conn.client, :privmsg, chat_to_channel(chat), message), :message)
     conn
   end
 
@@ -147,7 +149,7 @@ defmodule TMI.Client do
   Send a whisper message to a user.
   """
   def whisper(%Conn{} = conn, user, message) do
-    :ok = ExIRC.Client.msg(conn.client, :privmsg, user, message)
+    log_error(ExIRC.Client.msg(conn.client, :privmsg, user, message), :whisper)
     conn
   end
 
@@ -155,7 +157,7 @@ defmodule TMI.Client do
   Send an action message, i.e. (/me slaps someone with a big trout)
   """
   def action(%Conn{} = conn, chat, message) do
-    :ok = ExIRC.Client.me(conn.client, chat_to_channel(chat), message)
+    log_error(ExIRC.Client.me(conn.client, chat_to_channel(chat), message), :action)
     conn
   end
 
@@ -173,4 +175,9 @@ defmodule TMI.Client do
   """
   def chat_to_channel("#" <> _ = channel), do: channel
   def chat_to_channel(chat), do: "#" <> chat
+
+  defp log_error(:ok, _caller), do: :ok
+  defp log_error({:error, reason}, caller) do
+    Logger.error("[Client] #{caller} errored: #{reason}")
+  end
 end
