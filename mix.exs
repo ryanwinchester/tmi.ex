@@ -27,8 +27,8 @@ defmodule TMI.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:exirc, "~> 2.0"},
-      {:ex_doc, "~> 0.22", only: :dev, runtime: false}
+      {:exirc, github: "bitwalker/exirc", branch: "master"},
+      {:ex_doc, "~> 0.28", only: :dev, runtime: false}
     ]
   end
 
