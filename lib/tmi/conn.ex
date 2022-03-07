@@ -10,7 +10,7 @@ defmodule TMI.Conn do
     name: nil,
     client: nil,
     caps: [],
-    chats: []
+    channels: []
   )
 
   @type t :: %__MODULE__{
@@ -22,7 +22,7 @@ defmodule TMI.Conn do
           user: String.t(),
           client: pid,
           caps: [String.t() | atom | charlist],
-          chats: [String.t()]
+          channels: [String.t()]
         }
 
   @doc """
@@ -30,9 +30,9 @@ defmodule TMI.Conn do
 
   ## Example
 
-      iex> TMI.Conn.new(:some_pid, "user", "pass", ["mychat"], [])
+      iex> TMI.Conn.new(:some_pid, "user", "pass", ["mychannel"], [])
       %TMI.Conn{
-        server: "irc.chat.twitch.tv",
+        server: "irc.channel.twitch.tv",
         port: 6697,
         name: "user",
         nick: "user",
@@ -40,11 +40,11 @@ defmodule TMI.Conn do
         pass: "pass",
         client: :some_pid,
         caps: [],
-        chats: ["mychat"]
+        channels: ["mychannel"]
       }
 
   """
-  def new(client, user, pass, chats, caps) do
+  def new(client, user, pass, channels, caps) do
     %__MODULE__{
       client: client,
       name: user,
@@ -52,7 +52,7 @@ defmodule TMI.Conn do
       user: user,
       pass: pass,
       caps: caps,
-      chats: chats
+      channels: channels
     }
   end
 end

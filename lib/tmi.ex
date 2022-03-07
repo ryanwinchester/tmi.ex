@@ -112,7 +112,7 @@ defmodule TMI do
 
   @impl true
   def handle_cast({:message, chat, message}, conn) do
-    Client.message(conn, chat, message)
+    Client.say(conn, chat, message)
     {:noreply, conn}
   end
 
