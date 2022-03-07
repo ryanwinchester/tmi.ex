@@ -133,8 +133,8 @@ defmodule TMI.Client do
   @doc """
   Send a raw IRC command to TMI IRC server.
   """
-  @spec cmd(Conn.t(), String.t() | charlist()) :: :ok | {:error, :not_connected | :not_logged_in}
-  def cmd(%Conn{} = conn, command) do
+  @spec command(Conn.t(), iodata() | charlist()) :: :ok | {:error, :not_connected | :not_logged_in}
+  def command(%Conn{} = conn, command) do
     Client.cmd(conn.client, command)
   end
 
@@ -159,9 +159,9 @@ defmodule TMI.Client do
   @doc """
   Send an action message, i.e. (/me slaps someone with a big trout)
   """
-  @spec action(Conn.t(), String.t(), String.t()) ::
+  @spec me(Conn.t(), String.t(), String.t()) ::
           :ok | {:error, :not_connected | :not_logged_in}
-  def action(%Conn{} = conn, channel, message) do
+  def me(%Conn{} = conn, channel, message) do
     Client.me(conn.client, normalize_channel(channel), message)
   end
 

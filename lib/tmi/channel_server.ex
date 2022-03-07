@@ -9,9 +9,6 @@ defmodule TMI.ChannelServer do
 
   ### Twitch authentication and join rate limits:
 
-  If command and message rate limits are exceeded, an application cannot send channel
-  messages or commands for 30 minutes.
-
   | Limit                         | Applies to
   |-------------------------------|---------------------------------------------
   | 20 join attempts per 10       | Regular Twitch account
@@ -77,7 +74,7 @@ defmodule TMI.ChannelServer do
       timer_ref: nil
     }
 
-    Logger.info("[ChannelServer] STARTING with rate of #{state.rate}ms...")
+    Logger.info("[#{bot}.ChannelServer] STARTING with rate of #{state.rate}ms...")
 
     {:ok, state}
   end
@@ -85,7 +82,7 @@ defmodule TMI.ChannelServer do
   @impl true
   def handle_cast({:set_config, opts}, state) do
     config = Enum.into(opts, %{}) |> Map.take([:rate])
-    Logger.info("[ChannelServer] Updating config with: #{inspect(config)}")
+    Logger.info("[#{state.bot}.ChannelServer] Updating config with: #{inspect(config)}")
     {:noreply, Map.merge(state, config)}
   end
 
@@ -104,7 +101,7 @@ defmodule TMI.ChannelServer do
   # actually JOINED it yet.
   def handle_cast({:part, channel}, state) do
     Client.part(state.conn, channel)
-    Logger.info("[ChannelServer] PARTED #{channel}")
+    Logger.info("[#{state.bot}.ChannelServer] PARTED #{channel}")
     apply(message_server(state.bot, channel), :stop, [])
     {:noreply, %{state | queue: :queue.delete(channel, state.queue)}}
   end
@@ -119,25 +116,25 @@ defmodule TMI.ChannelServer do
   defp join_and_schedule_next(state) do
     case :queue.out(state.queue) do
       {:empty, _} ->
-        Logger.debug("[ChannelServer] no more channels to join: PAUSED")
+        Logger.debug("[#{state.bot}.ChannelServer] no more channels to join: PAUSED")
         {:noreply, %{state | timer_ref: nil}}
 
       {{:value, channel}, rest} ->
         Client.join(state.conn, channel)
 
         DynamicSupervisor.start_child(
-          dynamic_supervisor(state.bot),
+          message_server_supervisor(state.bot),
           message_server(state.bot, channel)
         )
 
-        Logger.info("[ChannelServer] JOINED #{channel}")
+        Logger.info("[#{state.bot}.ChannelServer] JOINED #{channel}")
         timer_ref = Process.send_after(self(), :join, state.rate)
         {:noreply, %{state | queue: rest, timer_ref: timer_ref}}
     end
   end
 
-  defp dynamic_supervisor(bot) do
-    Module.concat([bot, "DynamicSupervisor"])
+  defp message_server_supervisor(bot) do
+    Module.concat([bot, "MessageServerSupervisor"])
   end
 
   defp message_server(bot, channel) do

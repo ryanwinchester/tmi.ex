@@ -4,8 +4,8 @@ defmodule TMI.MixProject do
   def project do
     [
       app: :tmi,
-      version: "0.3.1",
-      elixir: "~> 1.10",
+      version: "0.4.0",
+      elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       name: "tmi.ex",
@@ -52,7 +52,8 @@ defmodule TMI.MixProject do
       licenses: ["Apache v2.0"],
       links: %{
         "GitHub" => "https://github.com/ryanwinchester/tmi.ex"
-      }
+      },
+      files: ["README.md", "mix*", "lib/**/*.ex"]
     ]
   end
 end

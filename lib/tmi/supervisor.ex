@@ -29,9 +29,9 @@ defmodule TMI.Supervisor do
 
         children = [
           {TMI.Supervisor,
-            name: FooBotSupervisor,
             bot: FooBot,
-            config: foobot_config}
+            user: "myuser",
+            pass: "oath:mypass"}
         ]
 
         Supervisor.init(children, strategy: :one_for_one)
@@ -44,23 +44,22 @@ defmodule TMI.Supervisor do
   """
   @spec start_link(keyword()) :: Supervisor.on_start()
   def start_link(opts) do
-    {name, opts} = Keyword.pop(opts, :name, __MODULE__)
-    Supervisor.start_link(__MODULE__, opts, name: name)
+    {bot, opts} = Keyword.pop!(opts, :bot)
+    default_name = Module.concat([bot, "Supervisor"])
+    {name, opts} = Keyword.pop(opts, :name, default_name)
+
+    Supervisor.start_link(__MODULE__, {bot, opts}, name: name)
   end
 
   @impl true
-  def init(opts) do
+  def init({bot, opts}) do
     {:ok, client} = ExIRC.Client.start_link()
-
-    bot = Keyword.fetch!(opts, :bot)
     conn = build_conn(client, opts)
 
-    # Name the other processes as part of the bot to not conflict with other
-    # bots if you start more than one.
-    dynamic_supervisor = Module.concat([bot, "DynamicSupervisor"])
+    dynamic_supervisor = Module.concat([bot, "MessageServerSupervisor"])
 
     children = [
-      {DynamicSupervisor, name: dynamic_supervisor},
+      {DynamicSupervisor, strategy: :one_for_one, name: dynamic_supervisor},
       {TMI.ChannelServer, {bot, conn}},
       {TMI.ConnectionHandler, {bot, conn}},
       {bot, conn}

@@ -4,9 +4,9 @@ defmodule TMI.ConnectionHandler do
 
   require Logger
 
-  alias ExIRC.Client
 
   alias TMI.ChannelServer
+  alias TMI.Client
   alias TMI.Conn
 
   @tmi_capabilities ['membership', 'tags', 'commands']
@@ -44,7 +44,7 @@ defmodule TMI.ConnectionHandler do
   end
 
   def handle_info({:connected, _server, _port}, %{conn: conn} = state) do
-    case Client.logon(conn.client, conn.pass, conn.user, conn.user, conn.user) do
+    case Client.logon(conn) do
       :ok ->
         Logger.info("[TMI.ConnectionHandler] LOGGED IN as #{conn.user}")
 
@@ -87,14 +87,14 @@ defmodule TMI.ConnectionHandler do
   @impl GenServer
   def terminate(_, %{conn: conn}) do
     Logger.warn("[TMI.ConnectionHandler] Terminating...")
-    Client.quit(conn.client, "[TMI.ConnectionHandler] Goodbye, cruel world.")
-    Client.stop!(conn.client)
+    Client.quit(conn, "[TMI.ConnectionHandler] Goodbye, cruel world.")
+    Client.stop(conn)
   end
 
   ## Helpers
 
   defp connect(%Conn{} = conn) do
-    case Client.connect_ssl!(conn.client, conn.server, conn.port) do
+    case Client.connect_ssl(conn) do
       :ok ->
         Logger.info("[TMI.ConnectionHandler] Connected to #{conn.server}:#{conn.port}...")
         :ok
@@ -107,13 +107,13 @@ defmodule TMI.ConnectionHandler do
 
   defp request_capabilities(conn, cap) when cap in @tmi_capabilities do
     Logger.info("[TMI.ConnectionHandler] Requesting #{cap} capability...")
-    Client.command(conn.client, ['CAP REQ :twitch.tv/', cap])
+    Client.command(conn, ['CAP REQ :twitch.tv/', cap])
   end
 
   # If you know what you're doing, you can request other capabilities ¯\_(ツ)_/¯
   defp request_capabilities(conn, cap) do
     Logger.warn("[TMI.ConnectionHandler] Requesting NON-TMI capability: #{cap}...")
-    Client.command(conn.client, to_charlist(cap))
+    Client.command(conn, to_charlist(cap))
   end
 
   defp join_channel(bot, channel) do
