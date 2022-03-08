@@ -4,8 +4,8 @@ defmodule TMI.MixProject do
   def project do
     [
       app: :tmi,
-      version: "0.3.1",
-      elixir: "~> 1.10",
+      version: "0.4.0",
+      elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       name: "tmi.ex",
@@ -27,8 +27,8 @@ defmodule TMI.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:exirc, "~> 2.0"},
-      {:ex_doc, "~> 0.22", only: :dev, runtime: false}
+      {:exirc, github: "ryanwinchester/exirc", branch: "feature/static-analysis-and-formatter"},
+      {:ex_doc, "~> 0.28", only: :dev, runtime: false}
     ]
   end
 
@@ -52,7 +52,8 @@ defmodule TMI.MixProject do
       licenses: ["Apache v2.0"],
       links: %{
         "GitHub" => "https://github.com/ryanwinchester/tmi.ex"
-      }
+      },
+      files: ["README.md", "mix*", "lib/**/*.ex"]
     ]
   end
 end

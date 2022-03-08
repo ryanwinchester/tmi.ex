@@ -1,176 +1,183 @@
 defmodule TMI.Client do
-  alias TMI.Conn
+  @moduledoc """
+  TMI wrapper for ExIRC.Client.
+  """
 
-  defdelegate start_link!(), to: ExIRC
+  alias ExIRC.Client
+
+  alias TMI.Conn
 
   @doc """
   Determine if the provided client process has an open connection to a server.
   """
-  @spec is_connected?(Conn.t()) :: true | false
+  @spec is_connected?(Conn.t()) :: boolean()
   def is_connected?(%Conn{} = conn) do
-    ExIRC.Client.is_connected?(conn.client)
+    Client.is_connected?(conn.client)
   end
 
   @doc """
   Determine if the provided client is logged on to a server.
   """
-  @spec is_logged_on?(Conn.t()) :: true | false
+  @spec is_logged_on?(Conn.t()) :: boolean() | {:error, :not_connected}
   def is_logged_on?(%Conn{} = conn) do
-    ExIRC.Client.is_logged_on?(conn.client)
+    Client.is_logged_on?(conn.client)
   end
 
   @doc """
   Get a list of users in the provided channel.
   """
-  @spec chat_users(Conn.t(), chat :: String.t()) :: list(String.t()) | [] | {:error, atom}
-  def chat_users(%Conn{} = conn, chat) do
-    ExIRC.Client.channel_users(conn.client, chat_to_channel(chat))
+  @spec channel_users(Conn.t(), String.t()) ::
+          [String.t()] | {:error, :not_connected | :not_logged_in | :no_such_channel}
+  def channel_users(%Conn{} = conn, channel) do
+    Client.channel_users(conn.client, normalize_channel(channel))
   end
 
   @doc """
-  Determine if a user is present in the provided chat.
+  Determine if a user is present in the provided channel.
   """
-  @spec chat_has_user?(Conn.t(), chat :: String.t(), user :: String.t()) ::
-          true | false | {:error, atom}
-  def chat_has_user?(%Conn{} = conn, chat, user) do
-    ExIRC.Client.channel_has_user?(conn.client, chat_to_channel(chat), user)
+  @spec channel_has_user?(Conn.t(), String.t(), String.t()) ::
+          boolean() | {:error, :not_connected | :not_logged_in | :no_such_channel}
+  def channel_has_user?(%Conn{} = conn, channel, user) do
+    Client.channel_has_user?(conn.client, normalize_channel(channel), user)
   end
-
-  ## Chainable (returns Conn.t())
 
   @doc """
   Add a new event handler process.
   """
+  @spec add_handler(Conn.t(), pid()) :: :ok
   def add_handler(%Conn{} = conn, handler) do
-    :ok = ExIRC.Client.add_handler(conn.client, handler)
-    conn
+    Client.add_handler(conn.client, handler)
   end
 
   @doc """
   Add a new event handler process, asynchronously.
   """
+  @spec add_handler_async(Conn.t(), pid()) :: :ok
   def add_handler_async(%Conn{} = conn, handler) do
-    :ok = ExIRC.Client.add_handler_async(conn.client, handler)
-    conn
+    Client.add_handler_async(conn.client, handler)
   end
 
   @doc """
   Remove an event handler process.
   """
+  @spec remove_handler(Conn.t(), pid()) :: :ok
   def remove_handler(%Conn{} = conn, handler) do
-    :ok = ExIRC.Client.remove_handler(conn.client, handler)
-    conn
+    Client.remove_handler(conn.client, handler)
   end
 
   @doc """
   Remove an event handler process, asynchronously
   """
+  @spec remove_handler_async(Conn.t(), pid()) :: :ok
   def remove_handler_async(%Conn{} = conn, handler) do
-    :ok = ExIRC.Client.remove_handler_async(conn.client, handler)
-    conn
-  end
-
-  @doc """
-  Connect to a server with the provided server and port.
-  """
-  def connect!(%Conn{} = conn) do
-    :ok = ExIRC.Client.connect!(conn.client, conn.server, conn.port)
-    conn
+    Client.remove_handler_async(conn.client, handler)
   end
 
   @doc """
   Connect to a server with the provided server and port via SSL.
   """
-  def connect_ssl!(%Conn{} = conn) do
-    :ok = ExIRC.Client.connect_ssl!(conn.client, conn.server, conn.port)
-    conn
+  @spec connect_ssl(Conn.t()) :: :ok | {:error, any()}
+  def connect_ssl(%Conn{} = conn) do
+    Client.connect_ssl!(conn.client, conn.server, conn.port)
+  end
+
+  @doc """
+  Kick a user from a channel.
+  """
+  @spec kick(Conn.t(), String.t(), String.t(), String.t()) ::
+          :ok | {:error, :not_connected | :not_logged_in}
+  def kick(conn, channel, user, message \\ "") do
+    Client.kick(conn.client, channel, user, message)
   end
 
   @doc """
   Logon to a server.
   """
+  @spec logon(Conn.t()) :: :ok | {:error, :not_connected}
   def logon(%Conn{} = conn) do
-    :ok = ExIRC.Client.logon(conn.client, conn.pass, conn.nick, conn.user, conn.name)
-    conn
+    Client.logon(conn.client, conn.pass, conn.nick, conn.user, conn.name)
   end
 
   @doc """
-  Join a chat.
+  Join a channel.
   """
-  def join(%Conn{} = conn, chat) do
-    :ok = ExIRC.Client.join(conn.client, chat_to_channel(chat))
-    conn
+  @spec join(Conn.t(), String.t()) :: :ok | {:error, :not_connected | :not_logged_in}
+  def join(%Conn{} = conn, channel) do
+    Client.join(conn.client, normalize_channel(channel))
   end
 
   @doc """
-  Leave a chat.
+  Leave a channel.
   """
-  def part(%Conn{} = conn, chat) do
-    :ok = ExIRC.Client.part(conn.client, chat_to_channel(chat))
-    conn
+  @spec part(Conn.t(), String.t()) :: :ok | {:error, :not_connected | :not_logged_in}
+  def part(%Conn{} = conn, channel) do
+    Client.part(conn.client, normalize_channel(channel))
   end
 
   @doc """
   Quit the server.
   """
+  @spec quit(Conn.t(), String.t()) :: :ok | {:error, :not_connected | :not_logged_in}
   def quit(%Conn{} = conn, msg) do
-    :ok = ExIRC.Client.quit(conn.client, msg)
-    conn
+    Client.quit(conn.client, msg)
   end
 
   @doc """
   Stop the client process.
   """
-  def stop!(%Conn{} = conn) do
-    :ok = ExIRC.Client.stop!(conn.client)
-    conn
+  @spec stop(Conn.t()) :: :ok
+  def stop(%Conn{} = conn) do
+    Client.stop!(conn.client)
   end
 
   @doc """
   Send a raw IRC command to TMI IRC server.
   """
+  @spec command(Conn.t(), iodata() | charlist()) ::
+          :ok | {:error, :not_connected | :not_logged_in}
   def command(%Conn{} = conn, command) do
-    cmd = ExIRC.Commands.command!(command)
-    :ok = ExIRC.Client.cmd(conn.client, cmd)
-    conn
+    Client.cmd(conn.client, command)
   end
 
   @doc """
-  Send a chat message.
+  Send a channel message.
   """
-  def message(%Conn{} = conn, chat, message) do
-    :ok = ExIRC.Client.msg(conn.client, :privmsg, chat_to_channel(chat), message)
-    conn
+  @spec say(Conn.t(), String.t(), String.t()) ::
+          :ok | {:error, :not_connected | :not_logged_in}
+  def say(%Conn{} = conn, channel, message) do
+    Client.msg(conn.client, :privmsg, normalize_channel(channel), message)
   end
 
   @doc """
   Send a whisper message to a user.
   """
+  @spec whisper(Conn.t(), String.t(), String.t()) ::
+          :ok | {:error, :not_connected | :not_logged_in}
   def whisper(%Conn{} = conn, user, message) do
-    :ok = ExIRC.Client.msg(conn.client, :privmsg, user, message)
-    conn
+    Client.msg(conn.client, :privmsg, user, message)
   end
 
   @doc """
   Send an action message, i.e. (/me slaps someone with a big trout)
   """
-  def action(%Conn{} = conn, chat, message) do
-    :ok = ExIRC.Client.me(conn.client, chat_to_channel(chat), message)
-    conn
+  @spec me(Conn.t(), String.t(), String.t()) ::
+          :ok | {:error, :not_connected | :not_logged_in}
+  def me(%Conn{} = conn, channel, message) do
+    Client.me(conn.client, normalize_channel(channel), message)
   end
 
   @doc """
-  Map chat names to channel names with the prepended "#".
+  Map channel names to channel names with the prepended "#".
 
   ## Examples
 
-      iex> TMI.Client.chat_to_channel("#foo")
+      iex> TMI.Client.normalize_channel("#foo")
       "#foo"
 
-      iex> TMI.Client.chat_to_channel("bar")
+      iex> TMI.Client.normalize_channel("bar")
       "#bar"
 
   """
-  def chat_to_channel("#" <> _ = channel), do: channel
-  def chat_to_channel(chat), do: "#" <> chat
+  def normalize_channel("#" <> _ = channel), do: channel
+  def normalize_channel(channel), do: "#" <> channel
 end

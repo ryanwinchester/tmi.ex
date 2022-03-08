@@ -1,165 +1,230 @@
 defmodule TMI do
   @moduledoc """
-  TMI is a library for connecting to Twitch chat with Elixir.
-
-  See the [README](https://hexdocs.pm/tmi/readme.html) for more details.
+  Define a Handler behaviour and default implementations.
   """
-  use GenServer
-
-  alias TMI.Client
-  alias TMI.Conn
-
-  # ----------------------------------------------------------------------------
-  # Public API
-  # ----------------------------------------------------------------------------
-
-  @doc """
-  Start the TMI supervisor process.
-  """
-  @spec supervisor_start_link(keyword) :: {:ok, pid}
-  def supervisor_start_link(config) do
-    TMI.Supervisor.start_link(config)
-  end
-
-  @doc """
-  Start the TMI process.
-  """
-  @spec start_link(Conn.t() | keyword) :: {:ok, pid}
-  def start_link(init_arg) do
-    GenServer.start_link(__MODULE__, init_arg, name: __MODULE__)
-  end
-
-  @doc """
-  Send a chat message.
-  """
-  @spec message(String.t(), String.t()) :: :ok
-  def message(chat, message) do
-    GenServer.cast(__MODULE__, {:message, chat, message})
-  end
-
-  @doc """
-  Send a whisper message to a user.
-  """
-  @spec whisper(String.t(), String.t()) :: :ok
-  def whisper(user, message) do
-    GenServer.cast(__MODULE__, {:whisper, user, message})
-  end
-
-  @doc """
-  Send an action message to a chat.
-  """
-  @spec action(String.t(), String.t()) :: :ok
-  def action(chat, message) do
-    GenServer.cast(__MODULE__, {:action, chat, message})
-  end
-
-  @doc """
-  Determine if the client process has an open connection to a server.
-  """
-  @spec is_connected?() :: true | false
-  def is_connected? do
-    GenServer.call(__MODULE__, :is_connected?)
-  end
-
-  @doc """
-  Determine if the client is logged on to a server.
-  """
-  @spec is_logged_on?() :: true | false
-  def is_logged_on? do
-    GenServer.call(__MODULE__, :is_logged_on?)
-  end
-
-  @doc """
-  Get a list of users in the provided chat.
-
-  Notes:
-   * requires `membership` capability to show more than yourself
-   * requires you are in the chat or an error will be raised
-
-  """
-  @spec chat_users(chat :: String.t()) :: list(String.t()) | [] | {:error, atom}
-  def chat_users(chat) do
-    GenServer.call(__MODULE__, {:chat_users, chat})
-  end
-
-  @doc """
-  Determine if a user is present in the provided chat.
-
-  Notes:
-   * requires `membership` capability to show more than yourself
-   * requires you are in the chat or an error will be raised
-
-  """
-  @spec chat_has_user?(chat :: String.t(), user :: String.t()) :: true | false | {:error, atom}
-  def chat_has_user?(chat, user) do
-    GenServer.call(__MODULE__, {:chat_has_user?, chat, user})
-  end
-
-  # ----------------------------------------------------------------------------
-  # GenServer Callbacks
-  # ----------------------------------------------------------------------------
-
-  @impl true
-  def init(%Conn{} = conn) do
-    {:ok, conn}
-  end
-
-  def init(config) do
-    config
-    |> build_conn()
-    |> init()
-  end
-
-  @impl true
-  def handle_cast({:message, chat, message}, conn) do
-    Client.message(conn, chat, message)
-    {:noreply, conn}
-  end
-
-  def handle_cast({:whisper, user, message}, conn) do
-    Client.whisper(conn, user, message)
-    {:noreply, conn}
-  end
-
-  def handle_cast({:action, chat, message}, conn) do
-    Client.action(conn, chat, message)
-    {:noreply, conn}
-  end
-
-  @impl true
-  def handle_call(:is_connected?, _from, conn) do
-    result = Client.is_connected?(conn)
-    {:reply, result, conn}
-  end
-
-  def handle_call(:is_logged_on?, _from, conn) do
-    result = Client.is_logged_on?(conn)
-    {:reply, result, conn}
-  end
-
-  def handle_call({:chat_users, chat}, _from, conn) do
-    result = Client.chat_users(conn, chat)
-    {:reply, result, conn}
-  end
-
-  def handle_call({:chat_has_user?, chat, user}, _from, conn) do
-    result = Client.chat_has_user?(conn, chat, user)
-    {:reply, result, conn}
-  end
-
-  # ----------------------------------------------------------------------------
-  # Helpers
-  # ----------------------------------------------------------------------------
 
   @doc false
-  def build_conn(config) do
-    user = Keyword.fetch!(config, :user)
-    pass = Keyword.fetch!(config, :pass)
-    chats = Keyword.get(config, :chats, [])
-    caps = Keyword.get(config, :capabilities, ['membership'])
+  defmacro __using__(_) do
+    quote do
+      use GenServer
 
-    {:ok, client} = Client.start_link!()
+      require Logger
 
-    Conn.new(client, user, pass, chats, caps)
+      @behaviour TMI.Handler
+
+      @spec start_link(TMI.Conn.t()) :: GenServer.on_start()
+      def start_link(conn) do
+        GenServer.start_link(__MODULE__, conn, name: __MODULE__)
+      end
+
+      def kick(channel, user, message \\ "") do
+        GenServer.cast(__MODULE__, {:kick, channel, user, message})
+      end
+
+      def me(channel, message) do
+        GenServer.cast(__MODULE__, {:me, channel, message})
+      end
+
+      def part(channel) do
+        GenServer.cast(__MODULE__, {:part, channel})
+      end
+
+      def say(channel, message) do
+        TMI.MessageServer.add_message(__MODULE__, channel, message)
+      end
+
+      def whisper(user, message) do
+        GenServer.cast(__MODULE__, {:whisper, user, message})
+      end
+
+      ## GenServer callbacks
+
+      @impl GenServer
+      def init(conn) do
+        TMI.Client.add_handler(conn, self())
+        {:ok, conn}
+      end
+
+      @impl GenServer
+      def handle_cast({:kick, channel, user, message}, conn) do
+        TMI.Client.kick(conn, channel, user, message)
+        {:noreply, conn}
+      end
+
+      def handle_cast({:me, channel, message}, conn) do
+        TMI.Client.me(conn, channel, message)
+        {:noreply, conn}
+      end
+
+      def handle_cast({:part, channel}, conn) do
+        TMI.Client.part(conn, channel)
+        {:noreply, conn}
+      end
+
+      def handle_cast({:whisper, user, message}, conn) do
+        TMI.Client.whisper(conn, user, message)
+        {:noreply, conn}
+      end
+
+      @impl GenServer
+      def handle_info(msg, conn) do
+        TMI.apply_incoming_to_bot(msg, __MODULE__)
+        {:noreply, conn}
+      end
+
+      ## Bot callbacks
+
+      @impl TMI.Handler
+      def handle_action(message, sender, channel) do
+        Logger.debug("[#{__MODULE__}] [#{channel}] * #{sender} #{message}")
+      end
+
+      @impl TMI.Handler
+      def handle_connected(server, port) do
+        Logger.debug("[#{__MODULE__}] Connected to #{server} on #{port}")
+      end
+
+      @impl TMI.Handler
+      def handle_disconnected() do
+        Logger.debug("[#{__MODULE__}] Disconnected")
+      end
+
+      @impl TMI.Handler
+      def handle_join(channel) do
+        Logger.debug("[#{__MODULE__}] [#{channel}] you joined")
+      end
+
+      @impl TMI.Handler
+      def handle_join(channel, user) do
+        Logger.debug("[#{__MODULE__}] [#{channel}] #{user} joined")
+      end
+
+      @impl TMI.Handler
+      def handle_kick(channel, kicker) do
+        Logger.debug("[#{__MODULE__}] [#{channel}] You were kicked by #{kicker}")
+      end
+
+      @impl TMI.Handler
+      def handle_kick(channel, user, kicker) do
+        Logger.debug("[#{__MODULE__}] [#{channel}] #{user} was kicked by #{kicker}")
+      end
+
+      @impl TMI.Handler
+      def handle_logged_in() do
+        Logger.debug("[#{__MODULE__}] Logged in")
+      end
+
+      @impl TMI.Handler
+      def handle_login_failed(reason) do
+        Logger.debug("[#{__MODULE__}] Login failed: #{reason}")
+      end
+
+      @impl TMI.Handler
+      def handle_mention(message, sender, channel) do
+        Logger.debug("[#{__MODULE__}] [#{channel}] MENTION - #{sender} SAYS: #{message}")
+      end
+
+      @impl TMI.Handler
+      def handle_message(message, sender, channel) do
+        Logger.debug("[#{__MODULE__}] [#{channel}] #{sender} SAYS: #{message}")
+      end
+
+      @impl TMI.Handler
+      def handle_part(channel) do
+        Logger.debug("[#{__MODULE__}] [#{channel}] you left")
+      end
+
+      @impl TMI.Handler
+      def handle_part(channel, user) do
+        Logger.debug("[#{__MODULE__}] [#{channel}] #{user} left")
+      end
+
+      @impl TMI.Handler
+      def handle_unrecognized(msg) do
+        Logger.debug("[#{__MODULE__}] UNRECOGNIZED: #{inspect(msg)}")
+      end
+
+      @impl TMI.Handler
+      def handle_whisper(message, sender) do
+        Logger.debug("[#{__MODULE__}] #{sender} WHISPERS: #{message}")
+      end
+
+      defoverridable(
+        handle_action: 3,
+        handle_connected: 2,
+        handle_disconnected: 0,
+        handle_join: 1,
+        handle_join: 2,
+        handle_kick: 2,
+        handle_kick: 3,
+        handle_logged_in: 0,
+        handle_login_failed: 1,
+        handle_mention: 3,
+        handle_message: 3,
+        handle_part: 1,
+        handle_part: 2,
+        handle_unrecognized: 1,
+        handle_whisper: 2
+      )
+    end
+  end
+
+  @doc """
+  Convert the ExIRC message to bot message.
+  """
+  def apply_incoming_to_bot({:connected, server, port}, bot) do
+    apply(bot, :handle_connected, [server, port])
+  end
+
+  def apply_incoming_to_bot(:logged_in, bot) do
+    apply(bot, :handle_logged_in, [])
+  end
+
+  def apply_incoming_to_bot({:login_failed, reason}, bot) do
+    apply(bot, :handle_login_failed, [reason])
+  end
+
+  def apply_incoming_to_bot(:disconnected, bot) do
+    apply(bot, :handle_disconnected, [])
+  end
+
+  def apply_incoming_to_bot({:joined, channel}, bot) do
+    apply(bot, :handle_join, [channel])
+  end
+
+  def apply_incoming_to_bot({:joined, channel, user}, bot) do
+    apply(bot, :handle_join, [channel, user.user])
+  end
+
+  def apply_incoming_to_bot({:parted, channel, user}, bot) do
+    apply(bot, :handle_part, [channel, user.user])
+  end
+
+  def apply_incoming_to_bot({:kicked, user, channel}, bot) do
+    apply(bot, :handle_kick, [channel, user.user])
+  end
+
+  def apply_incoming_to_bot({:kicked, user, kicker, channel}, bot) do
+    apply(bot, :handle_kick, [channel, user.user, kicker.user])
+  end
+
+  def apply_incoming_to_bot({:received, message, sender}, bot) do
+    apply(bot, :handle_whisper, [message, sender.user])
+  end
+
+  def apply_incoming_to_bot({:received, message, sender, channel}, bot) do
+    apply(bot, :handle_message, [message, sender.user, channel])
+  end
+
+  def apply_incoming_to_bot({:mentioned, message, sender, channel}, bot) do
+    apply(bot, :handle_mention, [message, sender.user, channel])
+  end
+
+  def apply_incoming_to_bot({:me, message, sender, channel}, bot) do
+    apply(bot, :handle_action, [message, sender.user, channel])
+  end
+
+  def apply_incoming_to_bot(msg, bot) do
+    apply(bot, :handle_unrecognized, [msg])
   end
 end
