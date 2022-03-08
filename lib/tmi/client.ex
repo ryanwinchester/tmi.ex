@@ -1,6 +1,6 @@
 defmodule TMI.Client do
   @moduledoc """
-  TMI Client wrapper.
+  TMI wrapper for ExIRC.Client.
   """
 
   alias ExIRC.Client
@@ -133,7 +133,8 @@ defmodule TMI.Client do
   @doc """
   Send a raw IRC command to TMI IRC server.
   """
-  @spec command(Conn.t(), iodata() | charlist()) :: :ok | {:error, :not_connected | :not_logged_in}
+  @spec command(Conn.t(), iodata() | charlist()) ::
+          :ok | {:error, :not_connected | :not_logged_in}
   def command(%Conn{} = conn, command) do
     Client.cmd(conn.client, command)
   end

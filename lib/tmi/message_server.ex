@@ -39,27 +39,30 @@ defmodule TMI.MessageServer do
 
   @default_rate_ms 1500
 
+  # ----------------------------------------------------------------------------
+  # Public API
+  # ----------------------------------------------------------------------------
+
   @doc """
   Start the message server. Usually because of a `JOIN`.
   """
-  @spec start_link(keyword()) :: GenServer.on_start()
-  def start_link(opts) do
-    channel = Keyword.fetch!(opts, :channel)
-    GenServer.start_link(__MODULE__, {channel, opts}, name: channel)
-  end
-
-  @doc """
-  Generate the module name from bot and channel.
-  """
-  @spec module_name(module(), String.t()) :: module()
-  def module_name(bot, channel) do
-    Module.concat([bot, String.capitalize(channel), "MessageServer"])
+  @spec start_link({module(), String.t(), keyword()}) :: GenServer.on_start()
+  def start_link({bot, channel, opts}) do
+    GenServer.start_link(__MODULE__, {bot, channel, opts}, name: module_name(bot, channel))
   end
 
   @doc """
   Stop the message server. Usually because of a `PART`.
   """
-  @spec stop(term()) :: :ok
+  @spec stop(module(), String.t()) :: :ok
+  def stop(bot, channel) do
+    module_name(bot, channel) |> GenServer.stop()
+  end
+
+  @doc """
+  Stop the message server. Usually because of a `PART`.
+  """
+  @spec stop(module()) :: :ok
   def stop(name) do
     GenServer.stop(name)
   end
@@ -67,37 +70,83 @@ defmodule TMI.MessageServer do
   @doc """
   Add a command to the outbound message queue.
   """
-  @spec add_command(String.t()) :: :ok
-  def add_command(command) do
-    GenServer.cast(__MODULE__, {:add, {:cmd, command}})
+  @spec add_command(module(), String.t(), String.t()) :: :ok
+  def add_command(bot, channel, command) do
+    module_name(bot, channel) |> GenServer.cast({:add, {:cmd, command}})
+  end
+
+  @doc """
+  Add a command to the outbound message queue.
+  """
+  @spec add_command(module(), String.t()) :: :ok
+  def add_command(name, command) do
+    GenServer.cast(name, {:add, {:cmd, command}})
   end
 
   @doc """
   Add a message to the outbound message queue.
   """
-  @spec add_message(String.t()) :: :ok
-  def add_message(message) do
-    GenServer.cast(__MODULE__, {:add, {:msg, message}})
+  @spec add_message(module(), String.t(), String.t()) :: :ok
+  def add_message(bot, channel, message) do
+    module_name(bot, channel) |> GenServer.cast({:add, {:msg, message}})
   end
 
-  ## Callbacks
+  @doc """
+  Add a message to the outbound message queue.
+  """
+  @spec add_message(module(), String.t()) :: :ok
+  def add_message(name, message) do
+    GenServer.cast(name, {:add, {:msg, message}})
+  end
 
-  @impl true
-  def init({channel, opts}) do
+  @doc """
+  Generate the bot and channel specific module name.
+  """
+  @spec module_name(module(), String.t()) :: module()
+  def module_name(bot, "#" <> channel) do
+    module_name(bot, channel)
+  end
+
+  def module_name(bot, channel) do
+    Module.concat([bot, String.capitalize(channel), "MessageServer"])
+  end
+
+  @doc """
+  Generate the bot and channel specific module name.
+  """
+  @spec supervisor_name(module()) :: module()
+  def supervisor_name(bot) do
+    Module.concat([bot, "MessageServerSupervisor"])
+  end
+
+  # ----------------------------------------------------------------------------
+  # GenServer callbacks
+  # ----------------------------------------------------------------------------
+
+  @doc """
+  Invoked when the server is started. `start_link/3` will block until it
+  returns.
+  """
+  @impl GenServer
+  def init({bot, channel, opts}) do
     state = %{
+      bot: bot,
+      channel: channel,
       conn: Keyword.fetch!(opts, :conn),
       rate: Keyword.get(opts, :rate, @default_rate_ms),
-      channel: channel,
       queue: :queue.new(),
       timer_ref: nil
     }
 
-    Logger.info("[MessageServer] [#{state.channel}] STARTING @ #{state.rate}ms...")
+    Logger.info("[#{module_name(bot, channel)}] [#{state.channel}] STARTING @ #{state.rate}ms...")
 
     {:ok, state}
   end
 
-  @impl true
+  @doc """
+  Invoked to handle asynchronous `cast/2` messages.
+  """
+  @impl GenServer
   # If we are paused, we will add it to the queue and start scheduling messages.
   def handle_cast({:add, message}, %{timer_ref: nil} = state) do
     send_and_schedule_next(%{state | queue: :queue.in(message, state.queue)})
@@ -109,12 +158,20 @@ defmodule TMI.MessageServer do
     {:noreply, %{state | queue: :queue.in(message, state.queue)}}
   end
 
-  @impl true
+  @doc """
+  Invoked to handle all other messages.
+
+  For example calling `Process.send_after(self(), :foo, 1000)` would send `:foo`
+  after one second, and we could match on that here.
+  """
+  @impl GenServer
   def handle_info(:send, state) do
     send_and_schedule_next(state)
   end
 
-  ## Internal API
+  # ----------------------------------------------------------------------------
+  # Internal API
+  # ----------------------------------------------------------------------------
 
   defp send_and_schedule_next(state) do
     case :queue.out(state.queue) do
@@ -135,5 +192,5 @@ defmodule TMI.MessageServer do
   # from this module, but more work is needed to know what this applies to
   # before we actually implement the `:cmd` functionality properly.
   defp send_message(:cmd, command, conn, _channel), do: Client.command(conn, command)
-  defp send_message(:msg, message, conn, channel), do: Client.message(conn, channel, message)
+  defp send_message(:msg, message, conn, channel), do: Client.say(conn, channel, message)
 end

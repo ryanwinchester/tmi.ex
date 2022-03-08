@@ -1,6 +1,6 @@
 defmodule TMI.ChannelServer do
   @moduledoc """
-  A GenServer for Channels.
+  A GenServer for Channels that self-rate-limits joins.
 
   ## Options
 
@@ -26,50 +26,62 @@ defmodule TMI.ChannelServer do
 
   alias TMI.Client
   alias TMI.Conn
+  alias TMI.MessageServer
 
-  @default_rate_ms 500
+  @default_join_rate_ms 500
+
+  @default_message_rate_ms 1500
+
+  # ----------------------------------------------------------------------------
+  # Public API
+  # ----------------------------------------------------------------------------
 
   @doc """
   Start the channel server.
   """
   @spec start_link({module(), Conn.t()}) :: GenServer.on_start()
   def start_link({bot, conn}) do
-    name = Module.concat([bot, "ChannelServer"])
-    GenServer.start_link(__MODULE__, {bot, conn}, name: name)
-  end
-
-  @doc """
-  Update the config in the state.
-  """
-  @spec set_config(keyword()) :: :ok
-  def set_config(opts) when is_list(opts) do
-    GenServer.cast(__MODULE__, {:set_config, opts})
+    GenServer.start_link(__MODULE__, {bot, conn}, name: module_name(bot))
   end
 
   @doc """
   Add a channel to the JOIN queue.
   """
-  @spec join(String.t()) :: :ok
-  def join(channel) do
-    GenServer.cast(__MODULE__, {:join, channel})
+  @spec join(module(), String.t()) :: :ok
+  def join(bot, channel) do
+    GenServer.cast(module_name(bot), {:join, channel})
   end
 
   @doc """
   Add a channel to the PART queue.
   """
-  @spec part(String.t()) :: :ok
-  def part(channel) do
-    GenServer.cast(__MODULE__, {:part, channel})
+  @spec part(module(), String.t()) :: :ok
+  def part(bot, channel) do
+    GenServer.cast(module_name(bot), {:part, channel})
   end
 
-  ## Callbacks
+  @doc """
+  Get the bot-specific ChannelServer module name.
+  """
+  @spec module_name(module()) :: module()
+  def module_name(bot) do
+    Module.concat([bot, "ChannelServer"])
+  end
 
-  @impl true
+  # ----------------------------------------------------------------------------
+  # GenServer callbacks
+  # ----------------------------------------------------------------------------
+
+  @doc """
+  Invoked when the server is started. `start_link/3` will block until it
+  returns.
+  """
+  @impl GenServer
   def init({bot, conn}) do
     state = %{
       bot: bot,
       conn: conn,
-      rate: @default_rate_ms,
+      rate: @default_join_rate_ms,
       queue: :queue.new(),
       timer_ref: nil
     }
@@ -79,7 +91,10 @@ defmodule TMI.ChannelServer do
     {:ok, state}
   end
 
-  @impl true
+  @doc """
+  Invoked to handle asynchronous `cast/2` messages.
+  """
+  @impl GenServer
   def handle_cast({:set_config, opts}, state) do
     config = Enum.into(opts, %{}) |> Map.take([:rate])
     Logger.info("[#{state.bot}.ChannelServer] Updating config with: #{inspect(config)}")
@@ -102,42 +117,60 @@ defmodule TMI.ChannelServer do
   def handle_cast({:part, channel}, state) do
     Client.part(state.conn, channel)
     Logger.info("[#{state.bot}.ChannelServer] PARTED #{channel}")
-    apply(message_server(state.bot, channel), :stop, [])
+    stop_channel_message_server(state.bot, channel)
     {:noreply, %{state | queue: :queue.delete(channel, state.queue)}}
   end
 
-  @impl true
-  def handle_info(:send, state) do
+  @doc """
+  Invoked to handle all other messages.
+
+  For example calling `Process.send_after(self(), :foo, 1000)` would send `:foo`
+  after one second, and we could match on that here.
+  """
+  @impl GenServer
+  def handle_info(:join, state) do
     join_and_schedule_next(state)
   end
 
-  ## Internal API
+  # ----------------------------------------------------------------------------
+  # Internal API
+  # ----------------------------------------------------------------------------
 
   defp join_and_schedule_next(state) do
     case :queue.out(state.queue) do
       {:empty, _} ->
-        Logger.debug("[#{state.bot}.ChannelServer] no more channels to join: PAUSED")
+        Logger.info("[#{state.bot}.ChannelServer] no more channels to join: PAUSED")
         {:noreply, %{state | timer_ref: nil}}
 
       {{:value, channel}, rest} ->
         Client.join(state.conn, channel)
-
-        DynamicSupervisor.start_child(
-          message_server_supervisor(state.bot),
-          message_server(state.bot, channel)
-        )
-
+        start_channel_message_server(state.bot, state.conn, channel)
         Logger.info("[#{state.bot}.ChannelServer] JOINED #{channel}")
         timer_ref = Process.send_after(self(), :join, state.rate)
         {:noreply, %{state | queue: rest, timer_ref: timer_ref}}
     end
   end
 
+  # TODO: See if we can adjust channel message rate based on if we are the
+  # broadcaster or mod in a specific channel. Probably means Twitch API calls
+  # or using the special Twitch IRC `capabilities`.
+  defp start_channel_message_server(bot, conn, channel) do
+    {:ok, _} =
+      DynamicSupervisor.start_child(
+        message_server_supervisor(bot),
+        {MessageServer, {bot, channel, conn: conn, rate: @default_message_rate_ms}}
+      )
+  end
+
+  defp stop_channel_message_server(bot, channel) do
+    message_server(bot, channel) |> MessageServer.stop()
+  end
+
   defp message_server_supervisor(bot) do
-    Module.concat([bot, "MessageServerSupervisor"])
+    MessageServer.supervisor_name(bot)
   end
 
   defp message_server(bot, channel) do
-    Module.concat([bot, String.capitalize(channel), "MessageServer"])
+    MessageServer.module_name(bot, channel)
   end
 end

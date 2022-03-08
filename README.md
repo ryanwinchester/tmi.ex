@@ -11,7 +11,7 @@ The package can be installed by adding `tmi` to your list of dependencies in `mi
 ```elixir
 def deps do
   [
-    {:tmi, "~> 0.3.0"},
+    {:tmi, "~> 0.4.0"},
   ]
 end
 ```
@@ -25,19 +25,26 @@ You'll also need an OAuth token for the password.
 
 The simplest method to get an OAuth token (while logged in to the account your bot will use), use the [Twitch Chat OAuth Password Generator](https://twitchapps.com/tmi/).
 
-Create a handler to deal with chat messages or events:
+Create a bot module to deal with chat messages or events:
 
 ```elixir
-defmodule MyHandler do
-  use TMI.Handler
+defmodule MyBot do
+  use TMI
 
-  @impl true
+  @impl TMI.Handler
   def handle_message("!" <> command, sender, chat) do
     case command do
-      "dice" -> TMI.message(chat, Enum.random(~w(⚀ ⚁ ⚂ ⚃ ⚄ ⚅)))
-      "echo " <> rest -> TMI.message(chat, rest)
-      "dance" -> TMI.action(chat, "dances for #{sender}")
-      _ -> TMI.message(chat, "unrecognized command")
+      "dice" ->
+        say(chat, Enum.random(~w(⚀ ⚁ ⚂ ⚃ ⚄ ⚅)))
+
+      "echo " <> rest ->
+        say(chat, rest)
+
+      "dance" ->
+        me(chat, "dances for #{sender}")
+
+      _ ->
+        say(chat, "unrecognized command")
     end
   end
 
@@ -71,12 +78,12 @@ First we need to go over the config options.
 
 #### Config options
 
- * `:user` - Twitch username of your bot user. (lowercase)
+ * `:bot` - The module that `use`s `TMI` and implements the `TMI.Handler` behaviour.
+ * `:user` - Twitch username of your bot user (lowercase).
  * `:pass` - OAuth token to use as a password, prefixed with `oauth:`.
- * `:chats` - The list of chats to join. (lowercase)
- * `:handler` - The module that implements the `TMI.Handler` behaviour.
+ * `:channels` - The list of channels to join (lowercase).
  * `:capabilities` - An optional list of `:tmi` capabilities, defined [here](https://dev.twitch.tv/docs/irc/guide#twitch-irc-capabilities).
-   Can be any of: `"membership"`, `"tags"`, and `"commands"`. Defaults to `['membership']` (lowercase)
+   Can be any of: `"membership"`, `"tags"`, and `"commands"`. Defaults to `['membership']` (lowercase).
 
 ##### Capabilities
 
@@ -85,37 +92,25 @@ First we need to go over the config options.
  * `commands` - Gives you some Twitch-specific commands. If your bot plans to read commands, it must
    also use the `tags` capability because most commands are less useful or even meaningless without tags. [docs](https://dev.twitch.tv/docs/irc/commands)
 
-Next, we can connect. Start `TMI` manually with:
+#### Example config
 
 ```elixir
-config = [
-  user: "mybotusername",
-  pass: "oauth:mybotoauthtoken",
-  chats: ["mychat"],
-  handler: MyHandler,
-  capabilities: ['membership']
-]
-
-TMI.supervisor_start_link(config)
+config :my_app,
+  bots: [
+    [
+      bot: MyApp.Bot,
+      user: "myappbot",
+      pass: "oauth:myappbotpassword",
+      channels: ["mychannel"]
+    ]
+  ]
 ```
 
-Or you can add it to your supervision tree, for example in `MyApp.Application`:
+### Add to your supervision tree
 
 ```elixir
-children = [
-  {TMI.Supervisor, config}
-]
-```
+bots = Application.fetch_env!(:my_app, :bots)
+children = for bot_config <- bots, do: {TMU.Supervisor, bot_config}
 
-
-The handler is for handling incoming messages, whispers, etc.
-
-However, what if you want to interact?
-
-```elixir
-TMI.message("mychat", "Hello World")
-
-TMI.whisper("some_user", "Hey there")
-
-TMI.action("mychat", "jumps around frantically")
+Supervisor.start_link(children, strategy: :one_for_one, name: MyApp.Supervisor)
 ```
