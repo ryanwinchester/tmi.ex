@@ -27,7 +27,7 @@ defmodule TMI.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:exirc, github: "ryanwinchester/exirc", branch: "feature/static-analysis-and-formatter"},
+      {:exirc, "~> 2.0"},
       {:ex_doc, "~> 0.28", only: :dev, runtime: false}
     ]
   end

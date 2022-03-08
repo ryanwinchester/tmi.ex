@@ -1,7 +1,5 @@
 defmodule TMI do
-  @moduledoc """
-  Define a Handler behaviour and default implementations.
-  """
+  @moduledoc false
 
   @doc false
   defmacro __using__(_) do
@@ -169,9 +167,8 @@ defmodule TMI do
     end
   end
 
-  @doc """
-  Convert the ExIRC message to bot message.
-  """
+  # Convert the ExIRC message to bot message.
+  @doc false
   def apply_incoming_to_bot({:connected, server, port}, bot) do
     apply(bot, :handle_connected, [server, port])
   end

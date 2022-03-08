@@ -53,7 +53,7 @@ defmodule TMI.ChannelServer do
   end
 
   @doc """
-  Add a channel to the PART queue.
+  PART from a channel.
   """
   @spec part(module(), String.t()) :: :ok
   def part(bot, channel) do
