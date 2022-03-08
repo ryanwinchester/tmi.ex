@@ -4,7 +4,6 @@ defmodule TMI.Client do
   """
 
   alias ExIRC.Client
-
   alias TMI.Conn
 
   require Logger
@@ -101,10 +100,25 @@ defmodule TMI.Client do
 
   @doc """
   Logon to a server.
+
+  Your nickname (`nick`) must be your Twitch username (login name) in lowercase.
+
+  A successful connection session looks like the following example:
+
+      < PASS oauth:<Twitch OAuth token>
+      < NICK <user>
+      > :tmi.twitch.tv 001 <user> :Welcome, GLHF!
+      > :tmi.twitch.tv 002 <user> :Your host is tmi.twitch.tv
+      > :tmi.twitch.tv 003 <user> :This server is rather new
+      > :tmi.twitch.tv 004 <user> :-
+      > :tmi.twitch.tv 375 <user> :-
+      > :tmi.twitch.tv 372 <user> :You are in a maze of twisty passages.
+      > :tmi.twitch.tv 376 <user> :>
+
   """
   @spec logon(Conn.t()) :: :ok | {:error, :not_connected}
   def logon(%Conn{} = conn) do
-    Client.logon(conn.client, conn.pass, conn.nick, conn.user, conn.name)
+    Client.logon(conn.client, conn.pass, String.downcase(conn.user), conn.user, conn.user)
     |> expect("couldn't logon")
   end
 

@@ -4,10 +4,8 @@ defmodule TMI.Conn do
   defstruct(
     server: "irc.chat.twitch.tv",
     port: 6697,
-    pass: nil,
-    nick: nil,
-    user: nil,
-    name: nil,
+    pass: "",
+    user: "",
     client: nil,
     caps: [],
     channels: []
@@ -15,12 +13,10 @@ defmodule TMI.Conn do
 
   @type t :: %__MODULE__{
           server: String.t(),
-          port: integer,
+          port: pos_integer(),
           pass: String.t(),
-          name: String.t(),
-          nick: String.t(),
           user: String.t(),
-          client: pid,
+          client: pid() | nil,
           caps: [String.t() | atom | charlist],
           channels: [String.t()]
         }
@@ -34,8 +30,6 @@ defmodule TMI.Conn do
       %TMI.Conn{
         server: "irc.channel.twitch.tv",
         port: 6697,
-        name: "user",
-        nick: "user",
         user: "user",
         pass: "pass",
         client: :some_pid,
@@ -47,8 +41,6 @@ defmodule TMI.Conn do
   def new(client, user, pass, channels, caps) do
     %__MODULE__{
       client: client,
-      name: user,
-      nick: user,
       user: user,
       pass: pass,
       caps: caps,
