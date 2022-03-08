@@ -7,6 +7,8 @@ defmodule TMI.Client do
 
   alias TMI.Conn
 
+  require Logger
+
   defdelegate start_link(), to: ExIRC.Client
 
   @doc """
@@ -23,6 +25,7 @@ defmodule TMI.Client do
   @spec is_logged_on?(Conn.t()) :: boolean() | {:error, :not_connected}
   def is_logged_on?(%Conn{} = conn) do
     Client.is_logged_on?(conn.client)
+    |> expect()
   end
 
   @doc """
@@ -32,6 +35,7 @@ defmodule TMI.Client do
           [String.t()] | {:error, :not_connected | :not_logged_in | :no_such_channel}
   def channel_users(%Conn{} = conn, channel) do
     Client.channel_users(conn.client, normalize_channel(channel))
+    |> expect("couldn't fetch channel users")
   end
 
   @doc """
@@ -41,6 +45,7 @@ defmodule TMI.Client do
           boolean() | {:error, :not_connected | :not_logged_in | :no_such_channel}
   def channel_has_user?(%Conn{} = conn, channel, user) do
     Client.channel_has_user?(conn.client, normalize_channel(channel), user)
+    |> expect("couldn't check for channel user")
   end
 
   @doc """
@@ -81,6 +86,7 @@ defmodule TMI.Client do
   @spec connect_ssl(Conn.t()) :: :ok | {:error, any()}
   def connect_ssl(%Conn{} = conn) do
     Client.connect_ssl!(conn.client, conn.server, conn.port)
+    |> expect("couldn't connect to SSL")
   end
 
   @doc """
@@ -90,6 +96,7 @@ defmodule TMI.Client do
           :ok | {:error, :not_connected | :not_logged_in}
   def kick(conn, channel, user, message \\ "") do
     Client.kick(conn.client, channel, user, message)
+    |> expect("couldn't kick #{user} from #{channel}")
   end
 
   @doc """
@@ -98,6 +105,7 @@ defmodule TMI.Client do
   @spec logon(Conn.t()) :: :ok | {:error, :not_connected}
   def logon(%Conn{} = conn) do
     Client.logon(conn.client, conn.pass, conn.nick, conn.user, conn.name)
+    |> expect("couldn't logon")
   end
 
   @doc """
@@ -106,6 +114,7 @@ defmodule TMI.Client do
   @spec join(Conn.t(), String.t()) :: :ok | {:error, :not_connected | :not_logged_in}
   def join(%Conn{} = conn, channel) do
     Client.join(conn.client, normalize_channel(channel))
+    |> expect("couldn't join channel #{channel}")
   end
 
   @doc """
@@ -114,6 +123,7 @@ defmodule TMI.Client do
   @spec part(Conn.t(), String.t()) :: :ok | {:error, :not_connected | :not_logged_in}
   def part(%Conn{} = conn, channel) do
     Client.part(conn.client, normalize_channel(channel))
+    |> expect("couldn't part channel #{channel}")
   end
 
   @doc """
@@ -122,6 +132,7 @@ defmodule TMI.Client do
   @spec quit(Conn.t(), String.t()) :: :ok | {:error, :not_connected | :not_logged_in}
   def quit(%Conn{} = conn, msg) do
     Client.quit(conn.client, msg)
+    |> expect("couldn't quit")
   end
 
   @doc """
@@ -139,6 +150,7 @@ defmodule TMI.Client do
           :ok | {:error, :not_connected | :not_logged_in}
   def command(%Conn{} = conn, command) do
     Client.cmd(conn.client, command)
+    |> expect("couldn't send cmd #{inspect(command)}")
   end
 
   @doc """
@@ -148,6 +160,7 @@ defmodule TMI.Client do
           :ok | {:error, :not_connected | :not_logged_in}
   def say(%Conn{} = conn, channel, message) do
     Client.msg(conn.client, :privmsg, normalize_channel(channel), message)
+    |> expect("couldn't send message to channel #{channel}")
   end
 
   @doc """
@@ -157,6 +170,7 @@ defmodule TMI.Client do
           :ok | {:error, :not_connected | :not_logged_in}
   def whisper(%Conn{} = conn, user, message) do
     Client.msg(conn.client, :privmsg, user, message)
+    |> expect("couldn't whisper to user #{user}")
   end
 
   @doc """
@@ -166,6 +180,7 @@ defmodule TMI.Client do
           :ok | {:error, :not_connected | :not_logged_in}
   def me(%Conn{} = conn, channel, message) do
     Client.me(conn.client, normalize_channel(channel), message)
+    |> expect("couldn't do `me` action in channel #{channel}")
   end
 
   @doc """
@@ -174,12 +189,24 @@ defmodule TMI.Client do
   ## Examples
 
       iex> TMI.Client.normalize_channel("#foo")
+      |> expect("")
       "#foo"
 
       iex> TMI.Client.normalize_channel("bar")
+      |> expect("")
       "#bar"
 
   """
   def normalize_channel("#" <> _ = channel), do: channel
   def normalize_channel(channel), do: "#" <> channel
+
+  # Log error if result is an error.
+  defp expect(result, message \\ "")
+
+  defp expect({:error, reason} = error, message) do
+    Logger.error("[TMI.Client] [#{inspect(reason)}] #{message}")
+    error
+  end
+
+  defp expect(success, _failed_message), do: success
 end
