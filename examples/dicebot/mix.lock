@@ -1,3 +1,3 @@
 %{
-  "exirc": {:git, "https://github.com/ryanwinchester/exirc.git", "b70444e96406108aba75da260c088ff6d36ed0c2", [branch: "feature/static-analysis-and-formatter"]},
+  "exirc": {:hex, :exirc, "2.0.0", "6b3b8da6d56096a2a613f3688ef05ed52d235a95566e889e885409c307b218b6", [:mix], [], "hexpm", "aba949c7e60ce4bbf1954d78ede33825ffe2fa01e840edd843ddc8f3775e7390"},
 }

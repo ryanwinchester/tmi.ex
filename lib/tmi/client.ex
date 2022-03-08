@@ -7,6 +7,8 @@ defmodule TMI.Client do
 
   alias TMI.Conn
 
+  defdelegate start_link(), to: ExIRC.Client
+
   @doc """
   Determine if the provided client process has an open connection to a server.
   """

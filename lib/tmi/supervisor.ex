@@ -18,7 +18,7 @@ defmodule TMI.Supervisor do
 
   @impl true
   def init({bot, opts}) do
-    {:ok, client} = ExIRC.Client.start_link()
+    {:ok, client} = TMI.Client.start_link()
     conn = build_conn(client, opts)
 
     dynamic_supervisor = TMI.MessageServer.supervisor_name(bot)
