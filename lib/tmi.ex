@@ -59,8 +59,8 @@ defmodule TMI do
         {:noreply, conn}
       end
 
-      def handle_cast({:whisper, user, message}, conn) do
-        TMI.Client.whisper(conn, user, message)
+      def handle_cast({:whisper, to, message}, conn) do
+        TMI.WhisperServer.add_whisper(__MODULE__, conn.user, to, message)
         {:noreply, conn}
       end
 
@@ -118,13 +118,18 @@ defmodule TMI do
       end
 
       @impl TMI.Handler
-      def handle_mention(message, sender, channel) do
-        Logger.debug("[#{__MODULE__}] [#{channel}] MENTION - #{sender} SAYS: #{message}")
+      def handle_message(message, sender, channel) do
+        Logger.debug("[#{__MODULE__}] [#{channel}] #{sender} SAYS: #{message}")
       end
 
       @impl TMI.Handler
-      def handle_message(message, sender, channel) do
+      def handle_message(message, sender, channel, _tags) do
         Logger.debug("[#{__MODULE__}] [#{channel}] #{sender} SAYS: #{message}")
+      end
+
+      @impl TMI.Handler
+      def handle_mention(message, sender, channel) do
+        Logger.debug("[#{__MODULE__}] [#{channel}] MENTION - #{sender} SAYS: #{message}")
       end
 
       @impl TMI.Handler
@@ -143,7 +148,17 @@ defmodule TMI do
       end
 
       @impl TMI.Handler
+      def handle_unrecognized(msg, tags) do
+        Logger.debug("[#{__MODULE__}] UNRECOGNIZED: #{inspect(msg)}; #{inspect(tags)}")
+      end
+
+      @impl TMI.Handler
       def handle_whisper(message, sender) do
+        Logger.debug("[#{__MODULE__}] #{sender} WHISPERS: #{message}")
+      end
+
+      @impl TMI.Handler
+      def handle_whisper(message, sender, _tags) do
         Logger.debug("[#{__MODULE__}] #{sender} WHISPERS: #{message}")
       end
 
@@ -157,18 +172,97 @@ defmodule TMI do
         handle_kick: 3,
         handle_logged_in: 0,
         handle_login_failed: 1,
-        handle_mention: 3,
         handle_message: 3,
+        handle_message: 4,
+        handle_mention: 3,
         handle_part: 1,
         handle_part: 2,
         handle_unrecognized: 1,
-        handle_whisper: 2
+        handle_unrecognized: 2,
+        handle_whisper: 2,
+        handle_whisper: 3
       )
     end
   end
 
+  @doc """
+  Parse a PRIVMSG message.
+
+  ## Example:
+
+      iex> parse_message("johndoe!johndoe@johndoe.tmi.twitch.tv PRIVMSG #johndoe :Hello World")
+      {"Hello World", "shyryan", "#shyryan"}
+
+  """
+  def parse_message(message) do
+    [full_sender, channel_message] = String.split(message, " PRIVMSG ", parts: 2)
+    [channel, message] = String.split(channel_message, " :", parts: 2)
+    [sender, _] = String.split(full_sender, "!", parts: 2)
+    {message, sender, channel}
+  end
+
+  @doc """
+  Parse a WHISPER message.
+
+  ## Example:
+
+      iex> parse_whisper("johndoe!johndoe@johndoe.tmi.twitch.tv WHISPER janedoe :Hello World")
+      {"Hello World", "johndoe"}
+
+  """
+  def parse_whisper(message) do
+    [full_sender, recipient_message] = String.split(message, " WHISPER ", parts: 2)
+    [_recipient, message] = String.split(recipient_message, " :", parts: 2)
+    [sender, _] = String.split(full_sender, "!", parts: 2)
+    {message, sender}
+  end
+
+  @doc """
+  Parse Twitch tags, if they are enabled.
+
+  ## Examples:
+
+      iex> parse_tags("@badge-info=subscriber/25;badges=broadcaster/1,subscriber/0;color=#333333;display-name=JohnDoe")
+      %{
+        "@badge-info" => "subscriber/25",
+        "badges" => "broadcaster/1,subscriber/0",
+        "color" => "#333333",
+        "display-name" => "JohnDoe"
+      }
+
+  """
+  def parse_tags(tags) do
+    tags
+    |> String.split(";")
+    |> Enum.map(&String.split(&1, "="))
+    |> Enum.into(%{}, &List.to_tuple/1)
+  end
+
+  # ----------------------------------------------------------------------------
   # Convert the ExIRC message to bot message.
+  # ----------------------------------------------------------------------------
+
+  ## WITH tags
+
   @doc false
+  # TODO: Add more cases.
+  def apply_incoming_to_bot({:unrecognized, tags, %ExIRC.Message{args: [arg]}} = msg, bot) do
+    cond do
+      String.contains?(arg, "PRIVMSG") ->
+        {message, sender, channel} = parse_message(arg)
+        apply(bot, :handle_message, [message, sender, channel, parse_tags(tags)])
+
+      String.contains?(arg, "WHISPER") ->
+        {message, sender} = parse_whisper(arg)
+        apply(bot, :handle_whisper, [message, sender, parse_tags(tags)])
+
+      true ->
+        apply(bot, :handle_unrecognized, [msg, parse_tags(tags)])
+    end
+  end
+
+  ## Without tags
+
   def apply_incoming_to_bot({:connected, server, port}, bot) do
     apply(bot, :handle_connected, [server, port])
   end

@@ -25,6 +25,14 @@ defmodule TMI.Handler do
   @callback handle_message(message :: String.t(), sender :: String.t(), channel :: String.t()) ::
               any
 
+  @callback handle_message(
+              message :: String.t(),
+              sender :: String.t(),
+              channel :: String.t(),
+              tags :: map()
+            ) ::
+              any
+
   @callback handle_mention(message :: String.t(), sender :: String.t(), channel :: String.t()) ::
               any
 
@@ -34,5 +42,9 @@ defmodule TMI.Handler do
 
   @callback handle_unrecognized(msg :: any) :: any
 
+  @callback handle_unrecognized(msg :: any, tags :: map()) :: any
+
   @callback handle_whisper(message :: String.t(), sender :: String.t()) :: any
+
+  @callback handle_whisper(message :: String.t(), sender :: String.t(), tags :: map()) :: any
 end

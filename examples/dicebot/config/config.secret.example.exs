@@ -6,6 +6,7 @@ config :dicebot,
       bot: Dicebot,
       user: "myname",
       pass: "oauth:mypass",
-      channels: ["mychannel"]
+      channels: ["mychannel"],
+      debug: false
     ]
   ]

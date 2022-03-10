@@ -8,7 +8,7 @@ defmodule TMI.Client do
 
   require Logger
 
-  defdelegate start_link(), to: ExIRC.Client
+  defdelegate start_link(opts \\ []), to: ExIRC.Client
 
   @doc """
   Determine if the provided client process has an open connection to a server.

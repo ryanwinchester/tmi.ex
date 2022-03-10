@@ -18,7 +18,7 @@ defmodule TMI.Supervisor do
 
   @impl true
   def init({bot, opts}) do
-    {:ok, client} = TMI.Client.start_link()
+    {:ok, client} = TMI.Client.start_link(Keyword.take(opts, [:debug]))
     conn = build_conn(client, opts)
 
     dynamic_supervisor = TMI.MessageServer.supervisor_name(bot)
@@ -27,6 +27,7 @@ defmodule TMI.Supervisor do
       {DynamicSupervisor, strategy: :one_for_one, name: dynamic_supervisor},
       {TMI.ChannelServer, {bot, conn}},
       {TMI.ConnectionServer, {bot, conn}},
+      {TMI.WhisperServer, {bot, conn}},
       {bot, conn}
     ]
 

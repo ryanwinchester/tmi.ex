@@ -101,7 +101,8 @@ config :my_app,
       bot: MyApp.Bot,
       user: "myappbot",
       pass: "oauth:myappbotpassword",
-      channels: ["mychannel"]
+      channels: ["mychannel"],
+      debug: false
     ]
   ]
 ```
@@ -114,3 +115,7 @@ children = for bot_config <- bots, do: {TMU.Supervisor, bot_config}
 
 Supervisor.start_link(children, strategy: :one_for_one, name: MyApp.Supervisor)
 ```
+
+### To get your bot verified:
+
+Visit https://dev.twitch.tv/limit-increase/ and have a good reason prepared.
