@@ -15,6 +15,10 @@ defmodule TMI do
         GenServer.start_link(__MODULE__, conn, name: __MODULE__)
       end
 
+      def join(channel) do
+        TMI.ChannelServer.join(__MODULE__, channel)
+      end
+
       def kick(channel, user, message \\ "") do
         GenServer.cast(__MODULE__, {:kick, channel, user, message})
       end
@@ -24,7 +28,7 @@ defmodule TMI do
       end
 
       def part(channel) do
-        GenServer.cast(__MODULE__, {:part, channel})
+        TMI.ChannelServer.part(__MODULE__, channel)
       end
 
       def say(channel, message) do
