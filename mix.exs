@@ -4,7 +4,7 @@ defmodule TMI.MixProject do
   def project do
     [
       app: :tmi,
-      version: "0.5.1",
+      version: "0.5.2",
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -40,7 +40,7 @@ defmodule TMI.MixProject do
 
   defp docs do
     [
-      main: "README",
+      main: "readme",
       # logo: "path/to/logo.png",
       extras: ["README.md"]
     ]

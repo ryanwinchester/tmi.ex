@@ -1,5 +1,7 @@
 defmodule TMI.ConnectionServer do
-  @moduledoc false
+  @moduledoc """
+  Handles connections to Twitch chat.
+  """
   use GenServer
 
   require Logger

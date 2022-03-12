@@ -13,7 +13,7 @@ The package can be installed by adding `tmi` to your list of dependencies in `mi
 ```elixir
 def deps do
   [
-    {:tmi, "~> 0.5.1"},
+    {:tmi, "~> 0.5.2"},
   ]
 end
 ```
@@ -69,10 +69,13 @@ end
     handle_kick(chat, kicker)
     handle_kick(chat, user, kicker)
     handle_whisper(message, sender)
+    handle_whisper(message, sender, tags)
     handle_message(message, sender, chat)
+    handle_message(message, sender, chat, tags)
     handle_mention(message, sender, chat)
     handle_action(message, sender, chat)
     handle_unrecognized(msg)
+    handle_unrecognized(msg, tags)
 
 ### Starting
 
