@@ -9,13 +9,13 @@ defmodule TMI.ChannelServer do
 
   ### Twitch authentication and join rate limits:
 
-  | Limit                         | Applies to
-  |-------------------------------|---------------------------------------------
-  | 20 join attempts per 10       | Regular Twitch account
-  | seconds per user              | .
-  |                               | .
-  | 2000 join attempts per 10     | Verified bot
-  | seconds per user              | .
+      | Limit                         | Applies to
+      |-------------------------------|-------------------------
+      | 20 join attempts per 10       | Regular Twitch account
+      | seconds per user              | .
+      |                               | .
+      | 2000 join attempts per 10     | Verified bot
+      | seconds per user              | .
 
   https://dev.twitch.tv/docs/irc/guide#rate-limits
 

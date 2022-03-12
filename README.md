@@ -1,8 +1,10 @@
-# tmi.ex
+# TMI (Twitch Messaging Interface) for Elixir
+
+[![Hex.pm](https://img.shields.io/hexpm/v/tmi)](https://hex.pm/packages/tmi)
+ [![Hex.pm](https://img.shields.io/hexpm/dt/tmi)](https://hex.pm/packages/tmi)
+ [![Hex.pm](https://img.shields.io/hexpm/l/tmi)](https://github.com/ryanwinchester/tmi.ex/blob/main/LICENSE)
 
 Connect to Twitch chat with Elixir.
-
-The name is inspired by [tmi.js](https://github.com/tmijs/tmi.js).
 
 ## Installation
 
@@ -11,7 +13,7 @@ The package can be installed by adding `tmi` to your list of dependencies in `mi
 ```elixir
 def deps do
   [
-    {:tmi, "~> 0.4.0"},
+    {:tmi, "~> 0.5.1"},
   ]
 end
 ```
@@ -109,9 +111,35 @@ config :my_app,
 
 ### Add to your supervision tree
 
+##### Single bot example:
+
+```elixir
+[bot_config] = Application.fetch_env!(:my_app, :bots)
+
+children = [
+  # If you have existing children, e.g.:
+  Existing.Worker,
+  {Another.Existing.Supervisor, []},
+  # Add the bot.
+  {TMI.Supervisor, bot_config}
+]
+
+Supervisor.start_link(children, strategy: :one_for_one, name: MyApp.Supervisor)
+```
+
+##### Multiple bots example:
+
 ```elixir
 bots = Application.fetch_env!(:my_app, :bots)
-children = for bot_config <- bots, do: {TMU.Supervisor, bot_config}
+bot_children = for bot_config <- bots, do: {TMI.Supervisor, bot_config}
+
+children = [
+  # If you have existing children, e.g.:
+  Existing.Worker,
+  {Another.Existing.Supervisor, []}
+  # Add the bot children.
+  | bot_children
+]
 
 Supervisor.start_link(children, strategy: :one_for_one, name: MyApp.Supervisor)
 ```

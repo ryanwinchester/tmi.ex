@@ -12,21 +12,21 @@ defmodule TMI.MessageServer do
   If command and message rate limits are exceeded, an application cannot send channel
   messages or commands for 30 minutes.
 
-  | Limit                         | Applies to
-  |-------------------------------|---------------------------------------------
-  | 20 per 30 seconds             | Users sending commands or messages to
-  |                               | channels in which they are not the broadcaster
-  |                               | and do not have Moderator status.
-  |                               | .
-  | 100 per 30 seconds 	          | Users sending commands or messages to channels
-  |                               | in which they are the broadcaster or have
-  |                               | Moderator status.
-  |                               | .
-  | 7500 per 30 seconds           | Verified bots. The channel limits above also
-  | site-wide                     | apply. In other words, one of the two limits
-  |                               | above will also be applied depending on
-  |                               | whether the verified bot is the broadcaster
-  |                               | or has Moderator status.
+      | Limit                         | Applies to
+      |-------------------------------|---------------------------------------------
+      | 20 per 30 seconds             | Users sending commands or messages to
+      |                               | channels in which they are not the broadcaster
+      |                               | and do not have Moderator status.
+      |                               | .
+      | 100 per 30 seconds 	          | Users sending commands or messages to channels
+      |                               | in which they are the broadcaster or have
+      |                               | Moderator status.
+      |                               | .
+      | 7500 per 30 seconds           | Verified bots. The channel limits above also
+      | site-wide                     | apply. In other words, one of the two limits
+      |                               | above will also be applied depending on
+      |                               | whether the verified bot is the broadcaster
+      |                               | or has Moderator status.
 
   https://dev.twitch.tv/docs/irc/guide#rate-limits
 

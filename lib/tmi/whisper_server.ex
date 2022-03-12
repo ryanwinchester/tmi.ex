@@ -7,10 +7,10 @@ defmodule TMI.WhisperServer do
   If the Whisper rate limits are exceeded, an application cannot send Whispers
   for 24 hours.
 
-  Limit                               | Applies to
-  ------------------------------------|-----------------------------------------
-  3 per second, up to 100 per minute, | All Twitch accounts
-  for 40 accounts per day             | .
+      | Limit                               | Applies to
+      |-------------------------------------|-----------------------
+      | 3 per second, up to 100 per minute, | All Twitch accounts
+      | for 40 accounts per day             | .
 
   https://dev.twitch.tv/docs/irc/guide#rate-limits
 
