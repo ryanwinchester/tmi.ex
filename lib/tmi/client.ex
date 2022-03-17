@@ -160,7 +160,7 @@ defmodule TMI.Client do
   @doc """
   Send a raw IRC command to TMI IRC server.
   """
-  @spec command(Conn.t(), iodata() | charlist()) ::
+  @spec command(Conn.t(), iodata()) ::
           :ok | {:error, :not_connected | :not_logged_in}
   def command(%Conn{} = conn, command) do
     Client.cmd(conn.client, command)
@@ -170,7 +170,7 @@ defmodule TMI.Client do
   @doc """
   Send a channel message.
   """
-  @spec say(Conn.t(), String.t(), String.t()) ::
+  @spec say(Conn.t(), String.t(), iodata()) ::
           :ok | {:error, :not_connected | :not_logged_in}
   def say(%Conn{} = conn, channel, message) do
     Client.msg(conn.client, :privmsg, normalize_channel(channel), message)
@@ -180,7 +180,7 @@ defmodule TMI.Client do
   @doc """
   Send a whisper message to a user.
   """
-  @spec whisper(Conn.t(), String.t(), String.t()) ::
+  @spec whisper(Conn.t(), String.t(), iodata()) ::
           :ok | {:error, :not_connected | :not_logged_in}
   def whisper(%Conn{} = conn, user, message) do
     Client.msg(conn.client, :privmsg, user, message)
@@ -190,7 +190,7 @@ defmodule TMI.Client do
   @doc """
   Send an action message, i.e. (/me slaps someone with a big trout)
   """
-  @spec me(Conn.t(), String.t(), String.t()) ::
+  @spec me(Conn.t(), String.t(), iodata()) ::
           :ok | {:error, :not_connected | :not_logged_in}
   def me(%Conn{} = conn, channel, message) do
     Client.me(conn.client, normalize_channel(channel), message)

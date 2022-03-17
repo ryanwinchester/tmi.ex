@@ -39,12 +39,37 @@ defmodule TMI do
         GenServer.cast(__MODULE__, {:whisper, user, message})
       end
 
+      @spec connected?() :: boolean()
+      def connected? do
+        GenServer.call(__MODULE__, :connected?)
+      end
+
+      @spec logged_in?() :: boolean()
+      def logged_in? do
+        GenServer.call(__MODULE__, :logged_in?)
+      end
+
       ## GenServer callbacks
 
       @impl GenServer
       def init(conn) do
         TMI.Client.add_handler(conn, self())
         {:ok, conn}
+      end
+
+      @impl GenServer
+      def handle_call(:connected?, _from, conn) do
+        {:reply, TMI.Client.is_connected?(conn), conn}
+      end
+
+      def handle_call(:logged_in?, _from, conn) do
+        case TMI.Client.is_logged_on?(conn) do
+          {:error, :not_connected} ->
+            {:reply, false, conn}
+
+          logged_in ->
+            {:reply, logged_in, conn}
+        end
       end
 
       @impl GenServer
