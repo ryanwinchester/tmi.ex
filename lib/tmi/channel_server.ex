@@ -61,6 +61,14 @@ defmodule TMI.ChannelServer do
   end
 
   @doc """
+  List the channels that we have joined.
+  """
+  @spec list_channels(module()) :: [String.t()]
+  def list_channels(bot) do
+    GenServer.call(module_name(bot), :list_channels)
+  end
+
+  @doc """
   Get the bot-specific ChannelServer module name.
   """
   @spec module_name(module()) :: module()
@@ -80,6 +88,7 @@ defmodule TMI.ChannelServer do
   def init({bot, conn}) do
     state = %{
       bot: bot,
+      channels: [],
       conn: conn,
       rate: @default_join_rate_ms,
       queue: :queue.new(),
@@ -89,6 +98,15 @@ defmodule TMI.ChannelServer do
     Logger.info("[#{bot}.ChannelServer] STARTING with rate of #{state.rate}ms...")
 
     {:ok, state}
+  end
+
+  @doc """
+  Invoked to handle synchronous `call/3` messages. `call/3` will block until a
+  reply is received (unless the call times out or nodes are disconnected).
+  """
+  @impl GenServer
+  def handle_call(:list_channels, _from, state) do
+    {:reply, state.channels, state}
   end
 
   @doc """
@@ -115,10 +133,12 @@ defmodule TMI.ChannelServer do
   # Performs a PART on the channel. Deletes it from the queue in case we have not
   # actually JOINED it yet.
   def handle_cast({:part, channel}, state) do
-    Client.part(state.conn, channel)
-    Logger.info("[#{state.bot}.ChannelServer] PARTED #{channel}")
-    stop_channel_message_server(state.bot, channel)
-    {:noreply, %{state | queue: :queue.delete(channel, state.queue)}}
+    %{bot: bot, channels: channels, conn: conn, queue: queue} = state
+    Client.part(conn, channel)
+    Logger.info("[#{bot}.ChannelServer] PARTED #{channel}")
+    stop_channel_message_server(bot, channel)
+    channels = List.delete(channels, channel)
+    {:noreply, %{state | queue: :queue.delete(channel, queue), channels: channels}}
   end
 
   @doc """
@@ -143,11 +163,12 @@ defmodule TMI.ChannelServer do
         {:noreply, %{state | timer_ref: nil}}
 
       {{:value, channel}, rest} ->
-        Client.join(state.conn, channel)
-        start_channel_message_server(state.bot, state.conn, channel)
-        Logger.info("[#{state.bot}.ChannelServer] JOINED #{channel}")
-        timer_ref = Process.send_after(self(), :join, state.rate)
-        {:noreply, %{state | queue: rest, timer_ref: timer_ref}}
+        %{bot: bot, channels: channels, conn: conn, rate: rate} = state
+        Client.join(conn, channel)
+        start_channel_message_server(bot, conn, channel)
+        Logger.info("[#{bot}.ChannelServer] JOINED #{channel}")
+        timer_ref = Process.send_after(self(), :join, rate)
+        {:noreply, %{state | queue: rest, timer_ref: timer_ref, channels: [channel | channels]}}
     end
   end
 

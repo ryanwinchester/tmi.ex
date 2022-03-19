@@ -39,6 +39,10 @@ defmodule TMI do
         GenServer.cast(__MODULE__, {:whisper, user, message})
       end
 
+      def list_channels do
+        TMI.ChannelServer.list_channels(__MODULE__)
+      end
+
       @spec connected?() :: boolean()
       def connected? do
         GenServer.call(__MODULE__, :connected?)

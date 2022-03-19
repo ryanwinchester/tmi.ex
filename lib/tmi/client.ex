@@ -198,6 +198,14 @@ defmodule TMI.Client do
   end
 
   @doc """
+  Get a list of the channels the client has joined.
+  """
+  @spec list_channels(Conn.t()) :: [String.t()] | {:error, :not_connected | :not_logged_in}
+  def list_channels(conn) do
+    Client.channels(conn.client)
+  end
+
+  @doc """
   Map channel names to channel names with the prepended "#".
 
   ## Examples
