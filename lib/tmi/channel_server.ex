@@ -32,6 +32,8 @@ defmodule TMI.ChannelServer do
 
   @default_message_rate_ms 1500
 
+  @hibernate_after_ms 60_000
+
   # ----------------------------------------------------------------------------
   # Public API
   # ----------------------------------------------------------------------------
@@ -41,7 +43,10 @@ defmodule TMI.ChannelServer do
   """
   @spec start_link({module(), Conn.t()}) :: GenServer.on_start()
   def start_link({bot, conn}) do
-    GenServer.start_link(__MODULE__, {bot, conn}, name: module_name(bot))
+    GenServer.start_link(__MODULE__, {bot, conn},
+      name: module_name(bot),
+      hibernate_after: @hibernate_after_ms
+    )
   end
 
   @doc """

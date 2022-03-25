@@ -24,6 +24,8 @@ defmodule TMI.WhisperServer do
 
   @default_rate_ms 625
 
+  @hibernate_after_ms 120_000
+
   # ----------------------------------------------------------------------------
   # Public API
   # ----------------------------------------------------------------------------
@@ -33,7 +35,10 @@ defmodule TMI.WhisperServer do
   """
   @spec start_link({module(), Conn.t()}) :: GenServer.on_start()
   def start_link({bot, conn}) do
-    GenServer.start_link(__MODULE__, {bot, conn}, name: module_name(bot))
+    GenServer.start_link(__MODULE__, {bot, conn},
+      name: module_name(bot),
+      hibernate_after: @hibernate_after_ms
+    )
   end
 
   @doc """
