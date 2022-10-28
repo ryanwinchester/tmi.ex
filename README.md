@@ -87,15 +87,8 @@ First we need to go over the config options.
  * `:user` - Twitch username of your bot user (lowercase).
  * `:pass` - OAuth token to use as a password, prefixed with `oauth:`.
  * `:channels` - The list of channels to join (lowercase).
- * `:capabilities` - An optional list of `:tmi` capabilities, defined [here](https://dev.twitch.tv/docs/irc/guide#twitch-irc-capabilities).
-   Can be any of: `"membership"`, `"tags"`, and `"commands"`. Defaults to `['membership']` (lowercase).
-
-##### Capabilities
-
- * `membership` - Shows `JOIN`s and `PART`s, so you can see when a user joins or leaves chat. [docs](https://dev.twitch.tv/docs/irc/membership)
- * `tags` - Will give you a bunch of additional channel and user state data (badges, etc). [docs](https://dev.twitch.tv/docs/irc/tags)
- * `commands` - Gives you some Twitch-specific commands. If your bot plans to read commands, it must
-   also use the `tags` capability because most commands are less useful or even meaningless without tags. [docs](https://dev.twitch.tv/docs/irc/commands)
+ * `:mod_channels` - The list of channels where your bot is a moderator
+   (this effects the message and command rate limits).
 
 #### Example config
 
@@ -106,7 +99,8 @@ config :my_app,
       bot: MyApp.Bot,
       user: "myappbot",
       pass: "oauth:myappbotpassword",
-      channels: ["mychannel"],
+      channels: ["mychannel", "foo"],
+      mod_channels: ["mychannel"],
       debug: false
     ]
   ]

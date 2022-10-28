@@ -18,6 +18,9 @@ defmodule TMI.Supervisor do
 
   @impl true
   def init({bot, opts}) do
+    {is_verified, opts} = Keyword.pop(opts, :is_verified, false)
+    {mod_channels, opts} = Keyword.pop(opts, :mod_channels, [])
+
     {:ok, client} = TMI.Client.start_link(Keyword.take(opts, [:debug]))
     conn = build_conn(client, opts)
 
@@ -25,7 +28,7 @@ defmodule TMI.Supervisor do
 
     children = [
       {DynamicSupervisor, strategy: :one_for_one, name: dynamic_supervisor},
-      {TMI.ChannelServer, {bot, conn}},
+      {TMI.ChannelServer, {bot, conn, is_verified, mod_channels}},
       {TMI.ConnectionServer, {bot, conn}},
       {TMI.WhisperServer, {bot, conn}},
       {bot, conn}
@@ -38,7 +41,7 @@ defmodule TMI.Supervisor do
     user = Keyword.fetch!(config, :user)
     pass = Keyword.fetch!(config, :pass)
     channels = Keyword.get(config, :channels, [])
-    caps = Keyword.get(config, :capabilities, ['membership'])
+    caps = Keyword.get(config, :capabilities, ['membership', 'tags', 'commands'])
 
     TMI.Conn.new(client, user, pass, channels, caps)
   end

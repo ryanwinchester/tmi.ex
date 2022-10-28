@@ -29,8 +29,7 @@ defmodule TMI.ChannelServer do
   alias TMI.MessageServer
 
   @default_join_rate_ms 500
-
-  @default_message_rate_ms 1500
+  @verified_join_rate_ms 5
 
   @hibernate_after_ms 60_000
 
@@ -41,9 +40,9 @@ defmodule TMI.ChannelServer do
   @doc """
   Start the channel server.
   """
-  @spec start_link({module(), Conn.t()}) :: GenServer.on_start()
-  def start_link({bot, conn}) do
-    GenServer.start_link(__MODULE__, {bot, conn},
+  @spec start_link({module(), Conn.t(), boolean(), [String.t()]}) :: GenServer.on_start()
+  def start_link({bot, conn, is_verified, mod_channels}) do
+    GenServer.start_link(__MODULE__, {bot, conn, is_verified, mod_channels},
       name: module_name(bot),
       hibernate_after: @hibernate_after_ms
     )
@@ -74,6 +73,14 @@ defmodule TMI.ChannelServer do
   end
 
   @doc """
+  Update the moderator status of a mod for a channel.
+  """
+  @spec update_mod_status(module(), String.t(), boolean()) :: :ok
+  def update_mod_status(bot, channel, mod_status) do
+    GenServer.cast(module_name(bot), {:update_mod_status, channel, mod_status})
+  end
+
+  @doc """
   Get the bot-specific ChannelServer module name.
   """
   @spec module_name(module()) :: module()
@@ -90,12 +97,13 @@ defmodule TMI.ChannelServer do
   returns.
   """
   @impl GenServer
-  def init({bot, conn}) do
+  def init({bot, conn, is_verified, mod_channels}) do
     state = %{
       bot: bot,
-      channels: [],
+      channels: MapSet.new(),
+      mod_channels: MapSet.new(mod_channels),
       conn: conn,
-      rate: @default_join_rate_ms,
+      rate: if(is_verified, do: @verified_join_rate_ms, else: @default_join_rate_ms),
       queue: :queue.new(),
       timer_ref: nil
     }
@@ -142,8 +150,25 @@ defmodule TMI.ChannelServer do
     Client.part(conn, channel)
     Logger.info("[#{bot}.ChannelServer] PARTED #{channel}")
     stop_channel_message_server(bot, channel)
-    channels = List.delete(channels, channel)
+    channels = MapSet.delete(channels, channel)
     {:noreply, %{state | queue: :queue.delete(channel, queue), channels: channels}}
+  end
+
+  def handle_cast({:update_mod_status, channel, mod_status}, state) do
+    %{bot: bot, channels: channels} = state
+
+    case {MapSet.member?(channels, channel), mod_status} do
+      {true, false} ->
+        update_channel_message_server_mod_status(bot, channel, mod_status)
+        {:noreply, %{state | channels: MapSet.delete(channels, channel)}}
+
+      {false, true} ->
+        update_channel_message_server_mod_status(bot, channel, mod_status)
+        {:noreply, %{state | channels: MapSet.put(channels, channel)}}
+
+      _ ->
+        {:noreply, state}
+    end
   end
 
   @doc """
@@ -170,22 +195,25 @@ defmodule TMI.ChannelServer do
       {{:value, channel}, rest} ->
         %{bot: bot, channels: channels, conn: conn, rate: rate} = state
         Client.join(conn, channel)
-        start_channel_message_server(bot, conn, channel)
+        is_mod = MapSet.member?(state.mod_channels, channel)
+        start_channel_message_server(bot, conn, channel, is_mod)
         Logger.info("[#{bot}.ChannelServer] JOINED #{channel}")
         timer_ref = Process.send_after(self(), :join, rate)
-        {:noreply, %{state | queue: rest, timer_ref: timer_ref, channels: [channel | channels]}}
+        channels = MapSet.put(channels, channel)
+        {:noreply, %{state | queue: rest, timer_ref: timer_ref, channels: channels}}
     end
   end
 
-  # TODO: See if we can adjust channel message rate based on if we are the
-  # broadcaster or mod in a specific channel. Probably means Twitch API calls
-  # or using the special Twitch IRC `capabilities`.
-  defp start_channel_message_server(bot, conn, channel) do
+  defp start_channel_message_server(bot, conn, channel, is_mod) do
     {:ok, _} =
       DynamicSupervisor.start_child(
         message_server_supervisor(bot),
-        {MessageServer, {bot, channel, conn: conn, rate: @default_message_rate_ms}}
+        {MessageServer, {bot, channel, is_mod, conn}}
       )
+  end
+
+  defp update_channel_message_server_mod_status(bot, channel, mod_status) do
+    message_server(bot, channel) |> MessageServer.update_mod_status(mod_status)
   end
 
   defp stop_channel_message_server(bot, channel) do

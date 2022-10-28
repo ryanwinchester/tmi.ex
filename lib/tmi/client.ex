@@ -154,17 +154,16 @@ defmodule TMI.Client do
   """
   @spec stop(Conn.t()) :: :ok
   def stop(%Conn{} = conn) do
-    Client.stop!(conn.client)
+    {:stop, :normal, :ok, _} = Client.stop!(conn.client)
+    :ok
   end
 
   @doc """
   Send a raw IRC command to TMI IRC server.
   """
-  @spec command(Conn.t(), iodata()) ::
-          :ok | {:error, :not_connected | :not_logged_in}
+  @spec command(Conn.t(), iodata()) :: :ok
   def command(%Conn{} = conn, command) do
     Client.cmd(conn.client, command)
-    |> expect("couldn't send cmd #{inspect(command)}")
   end
 
   @doc """

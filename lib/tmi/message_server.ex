@@ -36,8 +36,17 @@ defmodule TMI.MessageServer do
   require Logger
 
   alias TMI.Client
+  alias TMI.Conn
 
+  # The default is the general case for when the bot is not the broadcaster
+  # or a moderator in a channel. 20 messages per 30 seconds works out to
+  # exactly 1500ms delay. [1000 / (20 / 30)]
   @default_rate_ms 1500
+
+  # The mod rate is 100 messages per 30 seconds works out to
+  # Change the message rate when the moderator status changes.
+  # exactly 300ms delay. [1000 / (100 / 30)]
+  @mod_rate_ms 300
 
   @hibernate_after_ms 15 * 60 * 1000
 
@@ -48,9 +57,9 @@ defmodule TMI.MessageServer do
   @doc """
   Start the message server. Usually because of a `JOIN`.
   """
-  @spec start_link({module(), String.t(), keyword()}) :: GenServer.on_start()
-  def start_link({bot, channel, opts}) do
-    GenServer.start_link(__MODULE__, {bot, channel, opts},
+  @spec start_link({module(), String.t(), boolean(), Conn.t()}) :: GenServer.on_start()
+  def start_link({bot, channel, is_mod, conn}) do
+    GenServer.start_link(__MODULE__, {bot, channel, is_mod, conn},
       name: module_name(bot, channel),
       hibernate_after: @hibernate_after_ms
     )
@@ -105,6 +114,13 @@ defmodule TMI.MessageServer do
   end
 
   @doc """
+  Update the mod status of the bot for the channel.
+  """
+  def update_mod_status(name, is_mod) do
+    GenServer.cast(name, {:update_mod_status, is_mod})
+  end
+
+  @doc """
   Generate the bot and channel specific module name.
   """
   @spec module_name(module(), String.t()) :: module()
@@ -133,12 +149,12 @@ defmodule TMI.MessageServer do
   returns.
   """
   @impl GenServer
-  def init({bot, channel, opts}) do
+  def init({bot, channel, is_mod, conn}) do
     state = %{
       bot: bot,
       channel: channel,
-      conn: Keyword.fetch!(opts, :conn),
-      rate: Keyword.get(opts, :rate, @default_rate_ms),
+      conn: conn,
+      rate: if(is_mod, do: @mod_rate_ms, else: @default_rate_ms),
       queue: :queue.new(),
       timer_ref: nil
     }
@@ -161,6 +177,11 @@ defmodule TMI.MessageServer do
   # just add the message to queue.
   def handle_cast({:add, message}, state) do
     {:noreply, %{state | queue: :queue.in(message, state.queue)}}
+  end
+
+  # Change the message rate when the moderator status changes.
+  def handle_cast({:update_mod_status, is_mod}, state) do
+    {:noreply, %{state | rate: if(is_mod, do: @mod_rate_ms, else: @default_rate_ms)}}
   end
 
   @doc """
