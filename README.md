@@ -13,7 +13,7 @@ The package can be installed by adding `tmi` to your list of dependencies in `mi
 ```elixir
 def deps do
   [
-    {:tmi, "~> 0.5.3"},
+    {:tmi, "~> 0.6.0"},
   ]
 end
 ```
