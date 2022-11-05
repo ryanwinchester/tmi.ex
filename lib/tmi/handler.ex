@@ -6,6 +6,14 @@ defmodule TMI.Handler do
   @callback handle_action(message :: String.t(), sender :: String.t(), channel :: String.t()) ::
               any
 
+  @callback handle_action(
+              message :: String.t(),
+              sender :: String.t(),
+              channel :: String.t(),
+              map()
+            ) ::
+              any
+
   @callback handle_connected(server :: String.t(), port :: integer) :: any
 
   @callback handle_disconnected() :: any

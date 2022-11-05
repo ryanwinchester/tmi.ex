@@ -111,6 +111,11 @@ defmodule TMI do
       end
 
       @impl TMI.Handler
+      def handle_action(message, sender, channel, tags) do
+        Logger.debug("[#{__MODULE__}] [#{channel}] * #{sender} #{message} #{inspect(tags)}")
+      end
+
+      @impl TMI.Handler
       def handle_connected(server, port) do
         Logger.debug("[#{__MODULE__}] Connected to #{server} on #{port}")
       end
@@ -197,6 +202,7 @@ defmodule TMI do
 
       defoverridable(
         handle_action: 3,
+        handle_action: 4,
         handle_connected: 2,
         handle_disconnected: 0,
         handle_join: 1,
@@ -283,7 +289,15 @@ defmodule TMI do
     cond do
       String.contains?(arg, "PRIVMSG") ->
         {message, sender, channel} = parse_message(arg)
-        apply(bot, :handle_message, [message, sender, channel, parse_tags(tags)])
+
+        case message do
+          <<0x01, "ACTION ", message::binary>> ->
+            message = String.trim_trailing(message, <<0x01>>)
+            apply(bot, :handle_action, [message, sender, channel, parse_tags(tags)])
+
+          message ->
+            apply(bot, :handle_message, [message, sender, channel, parse_tags(tags)])
+        end
 
       String.contains?(arg, "WHISPER") ->
         {message, sender} = parse_whisper(arg)
