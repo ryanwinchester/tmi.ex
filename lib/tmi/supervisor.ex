@@ -41,7 +41,11 @@ defmodule TMI.Supervisor do
     user = Keyword.fetch!(config, :user)
     pass = Keyword.fetch!(config, :pass)
     channels = Keyword.get(config, :channels, [])
-    caps = Keyword.get(config, :capabilities, ['membership', 'tags', 'commands'])
+
+    caps =
+      config
+      |> Keyword.get(:capabilities, ['membership', 'tags', 'commands'])
+      |> to_charlist()
 
     TMI.Conn.new(client, user, pass, channels, caps)
   end
