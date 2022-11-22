@@ -5,6 +5,8 @@ defmodule TMI.ArgParser do
 
   require Logger
 
+  alias TMI.Events
+
   @doc """
   Parse the args into an event struct.
   """
@@ -18,12 +20,12 @@ defmodule TMI.ArgParser do
   def to_event("tmi.twitch.tv CLEARCHAT " <> rest, tags) do
     case String.split(rest, " ", parts: 2) do
       [channel] ->
-        %TMI.Events.Clearchat{channel: channel}
+        %Events.Clearchat{channel: channel}
 
       [channel, user] ->
         case tags do
           %{"@ban-duration" => duration} ->
-            %TMI.Events.Timeout{
+            %Events.Timeout{
               channel: channel,
               duration: String.to_integer(duration),
               user: user,
@@ -32,7 +34,7 @@ defmodule TMI.ArgParser do
             }
 
           _ ->
-            %TMI.Events.Ban{
+            %Events.Ban{
               channel: channel,
               user: user,
               user_id: Map.get(tags, "target-user-id"),
@@ -49,7 +51,7 @@ defmodule TMI.ArgParser do
   def to_event("tmi.twitch.tv CLEARMSG " <> rest, tags) do
     [channel, msg] = String.split(rest, " ", parts: 2)
 
-    %TMI.Events.Messagedeleted{
+    %Events.Messagedeleted{
       channel: channel,
       user: Map.get(tags, "@login"),
       message: msg,
@@ -64,7 +66,7 @@ defmodule TMI.ArgParser do
   def to_event("tmi.twitch.tv GLOBALUSERSTATE", _tags) do
     # TODO: Handle maintaining a state for the bot user.
     # Has emote-sets, and stuff.
-    %TMI.Events.Noop{}
+    %Events.Noop{}
   end
 
   # NOTICE
@@ -82,10 +84,10 @@ defmodule TMI.ArgParser do
     [channel, msg] = String.split(rest, " ", parts: 2)
     notice_type = Map.fetch!(tags, "msg-id") |> String.to_existing_atom()
 
-    if notice_type in TMI.Events.Notice.ignored_types() do
-      %TMI.Events.Noop{}
+    if notice_type in Events.Notice.ignored_types() do
+      %Events.Noop{}
     else
-      %TMI.Events.Notice{
+      %Events.Notice{
         channel: channel,
         message: msg,
         type: notice_type
@@ -123,7 +125,7 @@ defmodule TMI.ArgParser do
 
     case Map.fetch!(tags, "msg-id") do
       "announcement" ->
-        %TMI.Events.Announcement{
+        %Events.Announcement{
           channel: channel,
           user: user,
           message: msg,
@@ -132,14 +134,14 @@ defmodule TMI.ArgParser do
         }
 
       "anongiftpaidupgrade" ->
-        %TMI.Events.Anongiftpaidupgrade{
+        %Events.Anongiftpaidupgrade{
           channel: channel,
           user: user,
           tags: tags
         }
 
       "anonsubgift" ->
-        %TMI.Events.Anonsubgift{
+        %Events.Anonsubgift{
           channel: channel,
           streak_months: streak_months,
           recipient: recipient,
@@ -149,7 +151,7 @@ defmodule TMI.ArgParser do
         }
 
       "anonsubmysterygift" ->
-        %TMI.Events.Anonsubmysterygift{
+        %Events.Anonsubmysterygift{
           channel: channel,
           gift_sub_count: gift_sub_count,
           plan: plan,
@@ -160,7 +162,7 @@ defmodule TMI.ArgParser do
       "giftpaidupgrade" ->
         sender = Map.get(tags, "msg-param-sender-name") || Map.get(tags, "msg-param-sender-login")
 
-        %TMI.Events.Giftpaidupgrade{
+        %Events.Giftpaidupgrade{
           channel: channel,
           streak_months: streak_months,
           user: user,
@@ -169,7 +171,7 @@ defmodule TMI.ArgParser do
         }
 
       "primepaidupgrade" ->
-        %TMI.Events.Primepaidupgrade{
+        %Events.Primepaidupgrade{
           channel: channel,
           user: user,
           plan: plan,
@@ -178,7 +180,7 @@ defmodule TMI.ArgParser do
         }
 
       "raid" ->
-        %TMI.Events.Raided{
+        %Events.Raided{
           channel: channel,
           user: user,
           viewer_count: get_integer_tag(tags, "msg-param-viewerCount"),
@@ -186,7 +188,7 @@ defmodule TMI.ArgParser do
         }
 
       "resub" ->
-        %TMI.Events.Resub{
+        %Events.Resub{
           channel: channel,
           user: user,
           streak_months: streak_months,
@@ -199,7 +201,7 @@ defmodule TMI.ArgParser do
         }
 
       "ritual" ->
-        %TMI.Event.Ritual{
+        %Events.Ritual{
           channel: channel,
           user: user,
           type: Map.get(tags, "msg-param-ritual-name"),
@@ -208,7 +210,7 @@ defmodule TMI.ArgParser do
         }
 
       "sub" ->
-        %TMI.Events.Subscription{
+        %Events.Subscription{
           channel: channel,
           user: user,
           total_months: total_months,
@@ -219,7 +221,7 @@ defmodule TMI.ArgParser do
         }
 
       "subgift" ->
-        %TMI.Events.Subgift{
+        %Events.Subgift{
           channel: channel,
           user: user,
           streak_months: streak_months,
@@ -232,7 +234,7 @@ defmodule TMI.ArgParser do
         }
 
       "submysterygift" ->
-        %TMI.Events.Submysterygift{
+        %Events.Submysterygift{
           channel: channel,
           user: user,
           gift_sub_count: gift_sub_count,
@@ -243,7 +245,7 @@ defmodule TMI.ArgParser do
 
       usernotice ->
         Logger.warn("[TMI] unhandled USERNOTICE #{usernotice}")
-        %TMI.Events.Noop{}
+        %Events.Noop{}
     end
   end
 
@@ -254,7 +256,7 @@ defmodule TMI.ArgParser do
 
         case message do
           <<0x01, "ACTION ", message::binary>> ->
-            %TMI.Events.Action{
+            %Events.Action{
               channel: channel,
               user: sender,
               message: String.trim_trailing(message, <<0x01>>),
@@ -262,7 +264,7 @@ defmodule TMI.ArgParser do
             }
 
           message ->
-            %TMI.Events.Message{
+            %Events.Message{
               channel: channel,
               user: sender,
               message: message
@@ -272,7 +274,7 @@ defmodule TMI.ArgParser do
       String.contains?(arg, "WHISPER") ->
         {message, sender} = parse_whisper(arg)
 
-        %TMI.Events.Whisper{
+        %Events.Whisper{
           user: sender,
           message: message,
           tags: tags
@@ -280,7 +282,7 @@ defmodule TMI.ArgParser do
 
       true ->
         Logger.warn("[TMI] unhandled PRIVMSG: #{args}")
-        %TMI.Events.Noop{}
+        %Events.Noop{}
     end
   end
 
