@@ -84,7 +84,9 @@ defmodule TMI.Client do
   """
   @spec connect_ssl(Conn.t()) :: :ok | {:error, any()}
   def connect_ssl(%Conn{} = conn) do
-    Client.connect_ssl!(conn.client, conn.server, conn.port)
+    options = [verify: :verify_peer, cacerts: :public_key.cacerts_get()]
+
+    Client.connect_ssl!(conn.client, conn.server, conn.port, options)
     |> expect("couldn't connect to SSL")
   end
 
