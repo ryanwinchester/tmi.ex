@@ -28,9 +28,9 @@ defmodule TMI.Supervisor do
 
     children = [
       {DynamicSupervisor, strategy: :one_for_one, name: dynamic_supervisor},
-      {TMI.ChannelServer, {bot, conn, is_verified, mod_channels}},
-      {TMI.ConnectionServer, {bot, conn}},
-      {TMI.WhisperServer, {bot, conn}},
+      # {TMI.ChannelServer, {bot, conn, is_verified, mod_channels}},
+      # {TMI.ConnectionServer, {bot, conn}},
+      # {TMI.WhisperServer, {bot, conn}},
       {bot, conn}
     ]
 

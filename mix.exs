@@ -27,7 +27,12 @@ defmodule TMI.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:jason, "~> 1.4"},
+      {:req, "~> 0.4"},
       {:exirc, "~> 2.0"},
+      {:websockex, "~> 0.4.3"},
+
+      # Dev, test, docs, whatever
       {:ex_doc, "~> 0.28", only: :dev, runtime: false}
     ]
   end

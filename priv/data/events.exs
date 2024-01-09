@@ -6,9 +6,16 @@
 
 usernotice_properties = [
   {:channel, "room-id", "An ID that identifies the chat room (channel)."},
-  {:message, "system-msg", "The message Twitch shows in the chat room for this notice."},
+  {:system_message, "system-msg", "The message Twitch shows in the chat room for this notice."},
   {:user, "login", "The login name of the user whose action generated the message."},
   {:user_id, "user-id", "The user's ID."},
+  {:user_type, "user-type", """
+  The type of user sending the whisper message. Possible values are:
+   - "" — A normal user
+   - admin — A Twitch administrator
+   - global_mod — A global moderator
+   - staff — A Twitch employee
+  """},
   {:is_mod, "mod", "A Boolean value that determines whether the user is a moderator."},
   {:is_sub, "subscriber", "A Boolean value that determines whether the user is a subscriber."},
   {:is_turbo, "turbo", "A Boolean value that indicates whether the user has site-wide commercial free mode enabled."},
@@ -26,6 +33,7 @@ usernotice_properties = [
   offer different versions of the badge depending on how long the user has
   subscribed.
   """},
+  {:badge_info, "badge-info", ""},
   {:timestamp, "tmi-sent-ts", "The UNIX timestamp for when the Twitch IRC server received the message."}
 ]
 
@@ -38,8 +46,8 @@ usernotice_properties = [
 [
   %{
     "name" => "GiftSub",
-    "message" => "USERNOTICE",
-    "msg-id" => "subgift",
+    "irc_message" => "USERNOTICE",
+    "msg_id" => "subgift",
     "properties" => usernotice_properties ++ [
       {:months, "msg-param-months", "The total number of months the user has subscribed."},
       {:recipient_display_name, "msg-param-recipient-display-name", "The display name of the subscription gift recipient."},
@@ -47,10 +55,10 @@ usernotice_properties = [
       {:recipient_user_name, "msg-param-recipient-user-name", "The user name of the subscription gift recipient."},
       {:sub_plan, "msg-param-sub-plan", """
       The type of subscription plan being used. Possible values are:
-       - Prime — Amazon Prime subscription
-       - 1000 — First level of paid subscription
-       - 2000 — Second level of paid subscription
-       - 3000 — Third level of paid subscription
+       - `"prime"` — Amazon Prime subscription
+       - `1` — First level of paid subscription
+       - `2` — Second level of paid subscription
+       - `3` — Third level of paid subscription
       """},
       {:sub_plan_name, "msg-param-sub-plan-name", "The display name of the subscription plan. This may be a default name or one created by the channel owner."},
       {:gift_months, "msg-param-gift-months", "The number of months gifted as part of a single, multi-month gift."}
