@@ -3,6 +3,8 @@ defmodule TMI.Twitch do
   Twitch API.
   """
 
+  require Logger
+
   @base_url "https://api.twitch.tv"
 
   @subscriptions %{
@@ -100,35 +102,30 @@ defmodule TMI.Twitch do
       }
     }
 
-    IO.inspect(is_nil(access_token), label: "HAS TOKEN?")
-
     resp =
       client(client_id, access_token)
       |> Req.post(url: "/helix/eventsub/subscriptions", json: params)
 
     case resp do
-      {:ok, %{status: 202, headers: headers, body: body}} ->
-        Map.take(headers, ["ratelimit-limit", "ratelimit-remaining", "ratelimit-reset"])
-        |> IO.inspect(label: "RATE LIMIT HEADERS")
-        IO.inspect(body)
+      {:ok, %{status: 202, headers: _headers, body: body}} ->
+        {:ok, body}
 
       {:ok, %{status: 429, headers: %{"ratelimit-reset" => resets_at}}} ->
-        IO.inspect(resets_at, label: "RESETS AT")
-        # Wait until resets_at
+        Logger.warning("[TMI.Twitch] rate-limited; resets at #{resets_at}")
+        {:error, resp}
 
       {:ok, %{status: status} = resp} ->
-        IO.inspect(resp, label: "UNEXPECTED RESP?")
+        Logger.error("[TMI.Twitch] unexpected response: #{inspect(resp)}")
         {:error, resp}
 
       {:error, error} ->
-        IO.inspect(error, label: "ERROR")
+        Logger.error("[TMI.Twitch] error making resquest: #{inspect(error)}")
         {:error, error}
     end
   end
 
   @doc """
-  Create an eventsub subscription using websockets.
-  See: https://dev.twitch.tv/docs/api/reference/#create-eventsub-subscription
+  List all eventsub subscriptions.
   """
   def list_subscriptions(client_id, access_token, params \\ %{}) do
     resp =
@@ -136,21 +133,19 @@ defmodule TMI.Twitch do
       |> Req.get(url: "/helix/eventsub/subscriptions", json: params)
 
     case resp do
-      {:ok, %{status: 200, headers: headers, body: body}} ->
-        Map.take(headers, ["ratelimit-limit", "ratelimit-remaining", "ratelimit-reset"])
-        |> IO.inspect(label: "RATE LIMIT HEADERS")
-        IO.inspect(body)
+      {:ok, %{status: 200, headers: _headers, body: body}} ->
+        {:ok, body}
 
       {:ok, %{status: 429, headers: %{"ratelimit-reset" => resets_at}}} ->
-        IO.inspect(resets_at, label: "RESETS AT")
-        # Wait until resets_at
+        Logger.warning("[TMI.Twitch] rate-limited; resets at #{resets_at}")
+        {:error, resp}
 
       {:ok, %{status: status} = resp} ->
-        IO.inspect(resp, label: "UNEXPECTED RESP?")
+        Logger.error("[TMI.Twitch] unexpected response: #{inspect(resp)}")
         {:error, resp}
 
       {:error, error} ->
-        IO.inspect(error, label: "ERROR")
+        Logger.error("[TMI.Twitch] error making resquest: #{inspect(error)}")
         {:error, error}
     end
   end

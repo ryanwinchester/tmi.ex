@@ -28,10 +28,10 @@ defmodule TMI.Socket do
   def start_link(opts) do
     Logger.info("[TMI.Socket] connecting...")
 
-    # ----- TEMPORARY!!!!
+    # ----- TEMPORARY for dev!!!!
     config = Application.fetch_env!(:tmi, __MODULE__)
     opts = Keyword.merge(opts, config)
-    # ----- TEMPORARY!!!!
+    # ----- TEMPORARY for dev!!!!
 
     if not Enum.all?(opts, fn {key, _} -> key in @required_opts end) do
       raise ArgumentError, message: "missing one of the required options: #{inspect(opts)}"
@@ -119,6 +119,7 @@ defmodule TMI.Socket do
   #
   defp handle_message(%{"message_type" => "session_welcome"}, payload, state) do
     Logger.info("[TMI.Socket] connected")
+
     session_id = get_in(payload, ["session", "id"])
     client_id = state.client_id
     user_id = state.user_id
@@ -128,8 +129,6 @@ defmodule TMI.Socket do
     Enum.each(state.subscriptions, fn type ->
       Twitch.create_subscription(type, user_id, session_id, client_id, access_token)
     end)
-
-    # Twitch.list_subscriptions(client_id, access_token, %{status: "enabled"})
   end
 
   # ## Keepalive message
@@ -200,11 +199,10 @@ defmodule TMI.Socket do
   #
   defp handle_message(%{"subscription_type" => _type}, payload, _state) do
     Logger.debug("[TMI.Socket] got notification: " <> inspect(payload))
-    # TODO
+    # TODO: Map the payload to event structs and pass them to a handler module.
     # event = notification_to_event(payload)
     # state.handler_module.handle_event(event)
   end
-
 
   # ## Reconnect message
   #
@@ -312,64 +310,8 @@ defmodule TMI.Socket do
   # 4006 	Network error 	Transient network error.
   # 4007 	Invalid reconnect 	The reconnect URL is invalid.
   #
-  defp handle_message(%{"message_type" => "revocation"}, payload, _state) do
-    Logger.error("[TMI.Socket] sub revoked: #{inspect(payload)}")
-  end
-
-  # {:ok, %{"payload" => %{"event" => event}} = msg} ->
-  #   Logger.debug("[TMI.Socket] message: #{inspect(msg)}")
-
-  #   Task.Supervisor.start_child(
-  #     {:via, PartitionSupervisor, {TMI.TaskSupervisors, self()}},
-  #     fn -> handle_TMI_event(event["type"], event, state.bot) end
-  #   )
-
-  #   {:reply, ack_frame(msg), state}
-
-  # In the case the bot user has JOINED a channel, we need to handle this as a
-  # special case.
-  defp handle_TMI_event(
-         "member_joined_channel" = type,
-         %{"user" => user} = event,
-         %{user_id: user} = bot
-       ) do
-    Logger.debug("[TMI.Socket] member_joined_channel")
-    handle_bot_joined(event, bot)
-    bot.bot_module.handle_event(type, event)
-  end
-
-  # In the case the bot user has PARTED a channel, we need to handle this as a
-  # special case.
-  defp handle_TMI_event("channel_left" = type, event, bot) do
-    Logger.debug("[TMI.Socket] channel_left")
-    handle_parted(event, bot)
-    bot.bot_module.handle_event(type, event)
-  end
-
-  # Ignore messages from yourself...
-  defp handle_TMI_event("message", %{"user" => user}, %{user_id: user}), do: :ok
-  defp handle_TMI_event("message", %{"bot_id" => bot_id}, %{bot_id: bot_id}), do: :ok
-
-  # Catch-all case, fall through to bot handler only.
-  defp handle_TMI_event(type, event, bot) do
-    Logger.debug("[TMI.Socket] Sending #{type} event to #{bot.bot_module}")
-    bot.bot_module.handle_event(type, event)
-  end
-
-  defp handle_bot_joined(%{"channel" => channel} = _event, bot) do
-    TMI.ChannelServer.join(bot, channel)
-  end
-
-  defp handle_parted(%{"channel" => channel} = _event, bot) do
-    TMI.ChannelServer.part(bot, channel)
-  end
-
-  defp ack_frame(payload) do
-    ack =
-      payload
-      |> Map.take(["envelope_id"])
-      |> Jason.encode!()
-
-    {:text, ack}
+  defp handle_message(_metadata, payload, _state) do
+    # TODO: match ^
+    Logger.error("[TMI.Socket] closed: #{inspect(payload)}")
   end
 end
