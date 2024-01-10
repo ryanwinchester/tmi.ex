@@ -10,7 +10,7 @@ defmodule TMI.ConnectionServer do
   alias TMI.Client
   alias TMI.Conn
 
-  @tmi_capabilities ['membership', 'tags', 'commands']
+  @tmi_capabilities [~c"membership", ~c"tags", ~c"commands"]
 
   @hibernate_after_ms 20_000
 
@@ -122,7 +122,7 @@ defmodule TMI.ConnectionServer do
   # process is terminating.
   @impl GenServer
   def terminate(_, %{conn: conn}) do
-    Logger.warn("[TMI.ConnectionServer] Terminating...")
+    Logger.warning("[TMI.ConnectionServer] Terminating...")
     Client.quit(conn, "[TMI.ConnectionServer] Goodbye, cruel world.")
     Client.stop(conn)
   end
@@ -145,12 +145,12 @@ defmodule TMI.ConnectionServer do
 
   defp request_capabilities(conn, cap) when cap in @tmi_capabilities do
     Logger.info("[TMI.ConnectionServer] Requesting #{cap} capability...")
-    Client.command(conn, ['CAP REQ :twitch.tv/', cap])
+    Client.command(conn, [~c"CAP REQ :twitch.tv/", cap])
   end
 
   # If you know what you're doing, you can request other capabilities ¯\_(ツ)_/¯
   defp request_capabilities(conn, cap) do
-    Logger.warn("[TMI.ConnectionServer] Requesting NON-TMI capability: #{cap}...")
+    Logger.warning("[TMI.ConnectionServer] Requesting NON-TMI capability: #{cap}...")
     Client.command(conn, to_charlist(cap))
   end
 

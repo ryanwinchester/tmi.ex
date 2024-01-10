@@ -48,7 +48,10 @@ defmodule TMI.MessageServer do
   # exactly 300ms delay. [1000 / (100 / 30)]
   @mod_rate_ms 300
 
-  @hibernate_after_ms 15 * 60 * 1000
+  # After a certain amount of inactivity, this process can hibernate, which
+  # should also trigger garbage collection. This value is arbitrarily set to
+  # be 5 minutes.
+  @hibernate_after_ms 5 * 60 * 1000
 
   # ----------------------------------------------------------------------------
   # Public API

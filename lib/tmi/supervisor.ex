@@ -44,7 +44,7 @@ defmodule TMI.Supervisor do
 
     caps =
       config
-      |> Keyword.get(:capabilities, ['membership', 'tags', 'commands'])
+      |> Keyword.get(:capabilities, [~c"membership", ~c"tags", ~c"commands"])
       |> to_charlist()
 
     TMI.Conn.new(client, user, pass, channels, caps)
