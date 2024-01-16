@@ -1,4 +1,4 @@
-defmodule TMI.ChannelServer do
+defmodule TMI.IRC.ChannelServer do
   @moduledoc """
   A GenServer for Channels that self-rate-limits joins.
 
@@ -24,9 +24,9 @@ defmodule TMI.ChannelServer do
 
   require Logger
 
-  alias TMI.Client
-  alias TMI.Conn
-  alias TMI.MessageServer
+  alias TMI.IRC.Client
+  alias TMI.IRC.Conn
+  alias TMI.IRC.MessageServer
 
   @default_join_rate_ms 500
   @verified_join_rate_ms 5

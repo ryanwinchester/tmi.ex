@@ -1,4 +1,4 @@
-defmodule TMI.ConnectionServer do
+defmodule TMI.IRC.ConnectionServer do
   @moduledoc """
   Handles connections to Twitch chat.
   """
@@ -6,9 +6,9 @@ defmodule TMI.ConnectionServer do
 
   require Logger
 
-  alias TMI.ChannelServer
-  alias TMI.Client
-  alias TMI.Conn
+  alias TMI.IRC.ChannelServer
+  alias TMI.IRC.Client
+  alias TMI.IRC.Conn
 
   @tmi_capabilities [~c"membership", ~c"tags", ~c"commands"]
 
@@ -82,10 +82,10 @@ defmodule TMI.ConnectionServer do
   def handle_info({:connected, _server, _port}, %{conn: conn} = state) do
     case Client.logon(conn) do
       :ok ->
-        Logger.info("[TMI.ConnectionServer] LOGGED IN as #{conn.user}")
+        Logger.info("[TMI.IRC.ConnectionServer] LOGGED IN as #{conn.user}")
 
       {:error, :not_connected} ->
-        Logger.error("[TMI.ConnectionServer] Cannot LOG IN, not connected")
+        Logger.error("[TMI.IRC.ConnectionServer] Cannot LOG IN, not connected")
     end
 
     {:noreply, state}
@@ -99,17 +99,17 @@ defmodule TMI.ConnectionServer do
   end
 
   def handle_info(:disconnected, %{conn: conn} = state) do
-    Logger.info("[TMI.ConnectionServer] Disconnected from #{conn.server}:#{conn.port}")
+    Logger.info("[TMI.IRC.ConnectionServer] Disconnected from #{conn.server}:#{conn.port}")
     {:stop, :normal, state}
   end
 
   def handle_info({:disconnected, "@" <> _cmd, _msg}, %{conn: conn} = state) do
-    Logger.info("[TMI.ConnectionServer] Disconnected from #{conn.server}:#{conn.port}")
+    Logger.info("[TMI.IRC.ConnectionServer] Disconnected from #{conn.server}:#{conn.port}")
     {:noreply, state}
   end
 
   def handle_info({:notice, msg, _sender}, state) do
-    Logger.error("[TMI.ConnectionServer] NOTICE: #{msg}")
+    Logger.error("[TMI.IRC.ConnectionServer] NOTICE: #{msg}")
     {:noreply, state}
   end
 
@@ -122,9 +122,9 @@ defmodule TMI.ConnectionServer do
   # process is terminating.
   @impl GenServer
   def terminate(_, %{conn: conn}) do
-    Logger.warning("[TMI.ConnectionServer] Terminating...")
-    Client.quit(conn, "[TMI.ConnectionServer] Goodbye, cruel world.")
-    Client.stop(conn)
+    Logger.warning("[TMI.IRC.ConnectionServer] Terminating...")
+    Client.quit(conn, "[TMI.IRC.ConnectionServer] Goodbye, cruel world.")
+    Client.stop!(conn)
   end
 
   # ----------------------------------------------------------------------------
@@ -134,28 +134,28 @@ defmodule TMI.ConnectionServer do
   defp connect(%Conn{} = conn) do
     case Client.connect_ssl(conn) do
       :ok ->
-        Logger.info("[TMI.ConnectionServer] Connected to #{conn.server}:#{conn.port}...")
+        Logger.info("[TMI.IRC.ConnectionServer] Connected to #{conn.server}:#{conn.port}...")
         :ok
 
       {:error, reason} ->
-        Logger.error("[TMI.ConnectionServer] Unable to connect: #{inspect(reason)}")
+        Logger.error("[TMI.IRC.ConnectionServer] Unable to connect: #{inspect(reason)}")
         {:error, reason}
     end
   end
 
   defp request_capabilities(conn, cap) when cap in @tmi_capabilities do
-    Logger.info("[TMI.ConnectionServer] Requesting #{cap} capability...")
+    Logger.info("[TMI.IRC.ConnectionServer] Requesting #{cap} capability...")
     Client.command(conn, [~c"CAP REQ :twitch.tv/", cap])
   end
 
   # If you know what you're doing, you can request other capabilities ¯\_(ツ)_/¯
   defp request_capabilities(conn, cap) do
-    Logger.warning("[TMI.ConnectionServer] Requesting NON-TMI capability: #{cap}...")
+    Logger.warning("[TMI.IRC.ConnectionServer] Requesting NON-TMI capability: #{cap}...")
     Client.command(conn, to_charlist(cap))
   end
 
   defp join_channel(bot, channel) do
-    Logger.debug("[TMI.ConnectionServer] Joining channel #{channel}...")
+    Logger.debug("[TMI.IRC.ConnectionServer] Joining channel #{channel}...")
     ChannelServer.join(bot, channel)
   end
 end

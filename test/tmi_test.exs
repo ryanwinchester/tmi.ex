@@ -1,6 +1,7 @@
 defmodule TMITest do
   use ExUnit.Case
-  doctest TMI
+
+  doctest TMI, import: true
 
   test "true" do
     assert true

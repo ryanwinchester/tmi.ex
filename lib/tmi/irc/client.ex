@@ -1,10 +1,11 @@
-defmodule TMI.Client do
+defmodule TMI.IRC.Client do
   @moduledoc """
   TMI wrapper for ExIRC.Client.
   """
 
   alias ExIRC.Client
-  alias TMI.Conn
+
+  alias TMI.IRC.Conn
 
   require Logger
 
@@ -155,10 +156,9 @@ defmodule TMI.Client do
   @doc """
   Stop the client process.
   """
-  @spec stop(Conn.t()) :: :ok
-  def stop(%Conn{} = conn) do
-    {:stop, :normal, :ok, _} = Client.stop!(conn.client)
-    :ok
+  @spec stop!(Conn.t()) :: :ok
+  def stop!(%Conn{} = conn) do
+    :ok = Client.stop!(conn.client)
   end
 
   @doc """
@@ -212,13 +212,11 @@ defmodule TMI.Client do
 
   ## Examples
 
-      iex> TMI.Client.normalize_channel("#foo")
-      |> expect("")
+      iex> normalize_channel("#foo")
       "#foo"
 
-      iex> TMI.Client.normalize_channel("bar")
-      |> expect("")
-      "#bar"
+      iex> normalize_channel("foo")
+      "#foo"
 
   """
   def normalize_channel("#" <> _ = channel), do: channel
@@ -228,7 +226,7 @@ defmodule TMI.Client do
   defp expect(result, message \\ "")
 
   defp expect({:error, reason} = error, message) do
-    Logger.error("[TMI.Client] [#{inspect(reason)}] #{message}")
+    Logger.error("[TMI.IRC.Client] [#{inspect(reason)}] #{message}")
     error
   end
 

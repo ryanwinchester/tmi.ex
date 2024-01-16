@@ -1,4 +1,4 @@
-defmodule TMI.WhisperServer do
+defmodule TMI.IRC.WhisperServer do
   @moduledoc """
   A GenServer for Sending whispers at a specified rate.
 
@@ -19,8 +19,8 @@ defmodule TMI.WhisperServer do
 
   require Logger
 
-  alias TMI.Client
-  alias TMI.Conn
+  alias TMI.IRC.Client
+  alias TMI.IRC.Conn
 
   @default_rate_ms 625
 

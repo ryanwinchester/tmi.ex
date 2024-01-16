@@ -21,23 +21,23 @@ defmodule TMI.Supervisor do
     {is_verified, opts} = Keyword.pop(opts, :is_verified, false)
     {mod_channels, opts} = Keyword.pop(opts, :mod_channels, [])
 
-    {:ok, client} = TMI.Client.start_link(Keyword.take(opts, [:debug]))
-    conn = build_conn(client, opts)
+    {:ok, client} = TMI.IRC.Client.start_link(Keyword.take(opts, [:debug]))
+    conn = build_irc_conn(client, opts)
 
-    dynamic_supervisor = TMI.MessageServer.supervisor_name(bot)
+    dynamic_supervisor = TMI.IRC.MessageServer.supervisor_name(bot)
 
     children = [
       {DynamicSupervisor, strategy: :one_for_one, name: dynamic_supervisor},
-      {TMI.ChannelServer, {bot, conn, is_verified, mod_channels}},
-      {TMI.ConnectionServer, {bot, conn}},
-      {TMI.WhisperServer, {bot, conn}},
+      {TMI.IRC.ChannelServer, {bot, conn, is_verified, mod_channels}},
+      {TMI.IRC.ConnectionServer, {bot, conn}},
+      {TMI.IRC.WhisperServer, {bot, conn}},
       {bot, conn}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
   end
 
-  defp build_conn(client, config) do
+  defp build_irc_conn(client, config) do
     user = Keyword.fetch!(config, :user)
     pass = Keyword.fetch!(config, :pass)
     channels = Keyword.get(config, :channels, [])
@@ -47,6 +47,6 @@ defmodule TMI.Supervisor do
       |> Keyword.get(:capabilities, [~c"membership", ~c"tags", ~c"commands"])
       |> to_charlist()
 
-    TMI.Conn.new(client, user, pass, channels, caps)
+    TMI.IRC.Conn.new(client, user, pass, channels, caps)
   end
 end

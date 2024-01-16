@@ -29,7 +29,6 @@ defmodule TMI.MixProject do
     [
       {:castore, "~> 1.0"},
       {:exirc, "~> 2.0"},
-      {:floki, "~> 0.35"},
       {:nimble_parsec, "~> 1.0"},
       {:req, "~> 0.4"},
 
