@@ -419,7 +419,7 @@ defmodule TMI.Fields do
   Applies only to messages with more than 9 characters. Is `true` if users must
   post unique messages; otherwise, `false`.
   """
-  @type r9k? :: boolean()
+  @type unique_only? :: boolean()
 
   @typedoc """
   Twitch IRC tag `returning-chatter`.
@@ -608,6 +608,12 @@ defmodule TMI.Fields do
   whether the tag is set to `true` or `false`).
   """
   @type is_vip? :: boolean()
+
+  @typedoc """
+  [UNDOCUMENTED]
+  Twitch IRC tag `custom-reward-id`. Got this in a message that was a custom reward.
+  """
+  @type reward_id :: String.t()
 
   ## Unrecognized stuff...
 

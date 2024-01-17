@@ -3,7 +3,17 @@ defmodule TMIExampleTest do
 
   describe "emote_mode" do
     test "emote_only_on" do
-      message = {:unrecognized, "@msg-id=emote_only_on", %ExIRC.Message{server: [], nick: [], user: [], host: [], ctcp: false, cmd: "@msg-id=emote_only_on", args: ["tmi.twitch.tv NOTICE #spirodonfl :This room is now in emote-only mode."]}}
+      message =
+        {:unrecognized, "@msg-id=emote_only_on",
+         %ExIRC.Message{
+           server: [],
+           nick: [],
+           user: [],
+           host: [],
+           ctcp: false,
+           cmd: "@msg-id=emote_only_on",
+           args: ["tmi.twitch.tv NOTICE #spirodonfl :This room is now in emote-only mode."]
+         }}
 
       expected = %TMI.Events.EmoteMode{channel: "#spirodonfl", emote_only?: true}
 
@@ -11,7 +21,17 @@ defmodule TMIExampleTest do
     end
 
     test "emote_only_off" do
-      message = {:unrecognized, "@msg-id=emote_only_off", %ExIRC.Message{server: [], nick: [], user: [], host: [], ctcp: false, cmd: "@msg-id=emote_only_off", args: ["tmi.twitch.tv NOTICE #spirodonfl :This room is no longer in emote-only mode."]}}
+      message =
+        {:unrecognized, "@msg-id=emote_only_off",
+         %ExIRC.Message{
+           server: [],
+           nick: [],
+           user: [],
+           host: [],
+           ctcp: false,
+           cmd: "@msg-id=emote_only_off",
+           args: ["tmi.twitch.tv NOTICE #spirodonfl :This room is no longer in emote-only mode."]
+         }}
 
       expected = %TMI.Events.EmoteMode{channel: "#spirodonfl", emote_only?: false}
 
@@ -203,9 +223,6 @@ defmodule TMIExampleTest do
         months: 0,
         plan: :t3,
         plan_name: "Subscription (spirodonfl): Tier 3 Sub",
-        recipient_display_name: nil,
-        recipient_id: nil,
-        recipient_login: nil,
         share_streak?: false,
         system_message: "hmida74 subscribed at Tier 3.",
         timestamp: ~U[2024-01-16 21:11:54.873Z],

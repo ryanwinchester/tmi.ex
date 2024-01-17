@@ -5,7 +5,7 @@ defmodule TMI.Handler do
 
   ## The common bits...
 
-  @callback handle_event(TMI.event()) :: any
+  @callback handle_event(event :: TMI.event()) :: any
 
   @callback handle_mention(message :: String.t(), sender :: String.t(), channel :: String.t()) ::
               any

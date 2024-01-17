@@ -20,6 +20,7 @@ defmodule TMI.Events.Message do
       :timestamp,
       :user_id,
       :user_login,
-      :user_type
+      :user_type,
+      :reward_id
     ]
 end

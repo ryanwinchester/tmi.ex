@@ -137,7 +137,9 @@ defmodule TMI do
 
       @impl TMI.Handler
       def handle_kick(channel, user, kicker) do
-        Logger.debug("[#{TMI.bot_string(__MODULE__)}] [#{channel}] #{user} was kicked by #{kicker}")
+        Logger.debug(
+          "[#{TMI.bot_string(__MODULE__)}] [#{channel}] #{user} was kicked by #{kicker}"
+        )
       end
 
       @impl TMI.Handler
@@ -152,7 +154,9 @@ defmodule TMI do
 
       @impl TMI.Handler
       def handle_mention(message, sender, channel) do
-        Logger.debug("[#{TMI.bot_string(__MODULE__)}] [#{channel}] MENTION - <#{sender}> #{message}")
+        Logger.debug(
+          "[#{TMI.bot_string(__MODULE__)}] [#{channel}] MENTION - <#{sender}> #{message}"
+        )
       end
 
       @impl TMI.Handler
@@ -172,7 +176,9 @@ defmodule TMI do
 
       @impl TMI.Handler
       def handle_unrecognized(msg) do
-        Logger.debug("[#{TMI.bot_string(__MODULE__)}] UNRECOGNIZED: #{inspect(msg, pretty: true)}")
+        Logger.debug(
+          "[#{TMI.bot_string(__MODULE__)}] UNRECOGNIZED: #{inspect(msg, pretty: true)}"
+        )
       end
 
       defoverridable(
@@ -205,15 +211,23 @@ defmodule TMI do
 
   @doc false
   def default_handle_event(%TMI.Events.Message{} = event, module) do
-    Logger.debug("[#{bot_string(module)}] [#{event.channel}] <#{event.user_login}> #{event.message}")
+    Logger.debug(
+      "[#{bot_string(module)}] [#{event.channel}] <#{event.user_login}> #{event.message}"
+    )
   end
 
   def default_handle_event(%TMI.Events.ChatAction{} = event, module) do
-    Logger.debug("[#{bot_string(module)}] [#{event.channel}] * <#{event.user_id}> #{event.message}")
+    Logger.debug(
+      "[#{bot_string(module)}] [#{event.channel}] * <#{event.user_id}> #{event.message}"
+    )
   end
 
   def default_handle_event(%TMI.Events.Whisper{} = event, module) do
     Logger.debug("[#{bot_string(module)}] WHISPER - <#{event.user_login}> #{event.message}")
+  end
+
+  def default_handle_event(%TMI.Events.Unrecognized{msg: %ExIRC.Message{} = msg}, module) do
+    Logger.debug("[#{bot_string(module)}] [#{msg.cmd}] #{inspect(msg.args)}")
   end
 
   def default_handle_event(event, module) do
@@ -353,6 +367,11 @@ defmodule TMI do
           params ->
             tag_string
             |> TMI.IRC.Tags.parse!()
+            |> tap(fn tags ->
+              if Map.get(tags, "custom-reward-id") do
+                IO.inspect(msg, pretty: true)
+              end
+            end)
             |> TMI.Event.from_map_with_name(:message, params)
         end
 

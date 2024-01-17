@@ -200,6 +200,10 @@ defmodule TMI.IRC.Tags do
     {tag_name(key), String.to_integer(val)}
   end
 
+  defp tag_map({"slow" = key, val}) do
+    {tag_name(key), String.to_integer(val)}
+  end
+
   defp tag_map({"user-type" = key, val}) do
     type =
       case val do
@@ -273,6 +277,10 @@ defmodule TMI.IRC.Tags do
   end
 
   defp tag_map({"subs-only" = key, val}) do
+    {tag_name(key), val == "1"}
+  end
+
+  defp tag_map({"r9k" = key, val}) do
     {tag_name(key), val == "1"}
   end
 

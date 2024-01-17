@@ -1,4 +1,4 @@
-defmodule TMI.Events.Sub do
+defmodule TMI.Events.Resub do
   @moduledoc """
   Sub event.
   IRC `msg-id` is `sub` and EventSub name is `sub`.

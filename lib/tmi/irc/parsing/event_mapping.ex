@@ -28,7 +28,7 @@ defmodule TMI.IRC.Parsing.EventMapping do
     #   "" => :sub,
     #   "" => :sub_message,
     #   "" => :sub_end,
-    #   "" => :resub,
+    "resub" => :resub,
     #   "" => :sub_gift,
     "submysterygift" => :community_sub_gift,
     "subgift" => :sub_gift,
