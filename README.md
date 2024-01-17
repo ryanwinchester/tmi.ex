@@ -33,26 +33,28 @@ Create a bot module to deal with chat messages or events:
 defmodule MyBot do
   use TMI
 
-  @impl TMI.Handler
-  def handle_message("!" <> command, sender, chat) do
-    case command do
-      "dice" ->
-        say(chat, Enum.random(~w(⚀ ⚁ ⚂ ⚃ ⚄ ⚅)))
+  alias TMI.Events.Message
 
-      "echo " <> rest ->
-        say(chat, rest)
-
-      "dance" ->
-        me(chat, "dances for #{sender}")
-
-      _ ->
-        say(chat, "unrecognized command")
-    end
+  @impl true
+  def handle_event(%Message{message: "!" <> cmd} = event) do
+    cmd(cmd, event)
   end
 
-  def handle_message(message, sender, chat) do
-    Logger.debug("Message in #{chat} from #{sender}: #{message}")
-  end
+  # ... TODO: match on other you're interested in ...
+
+  ## Helpers
+
+  defp cmd("roll", %Message{channel: channel, display_name: user}),
+    do: say(channel, "@#{user} rolled a #{Enum.random(1..6)}!")
+
+  defp cmd("echo " <> rest, %Message{channel: channel}),
+    do: say(channel, rest)
+
+  defp cmd("dance", %Message{channel: channel, display_name: user}),
+    do: me(channel, "dances for @#{user}")
+
+  defp cmd(_command, msg),
+    do: say(msg.channel, "unrecognized command")
 end
 ```
 
@@ -93,15 +95,17 @@ First we need to go over the config options.
 #### Example config
 
 ```elixir
+# config/runtime.exs
+
 config :my_app,
   bots: [
     [
       bot: MyApp.Bot,
       user: "myappbot",
-      pass: "oauth:myappbotpassword",
+      pass: System.fetch_env!("TWITCH_OATH_TOKEN"), # "oauth:myappbotpassword"
       channels: ["mychannel", "foo"],
       mod_channels: ["mychannel"],
-      debug: false
+      debug: false # defaults to false
     ]
   ]
 ```
@@ -111,6 +115,8 @@ config :my_app,
 ##### Single bot example:
 
 ```elixir
+# lib/my_app/application.ex
+
 [bot_config] = Application.fetch_env!(:my_app, :bots)
 
 children = [

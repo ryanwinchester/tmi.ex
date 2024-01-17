@@ -1,6 +1,9 @@
 defmodule TMI.Events.CommunitySubGift do
   @moduledoc """
   Gift sub event.
+  This is when someone gifts subs to the community.
+  It will be followed by `n` `TMI.Events.SubGift` events, where `n` is the
+  `:total` ammount of gift subs.
   """
   use TMI.Event,
     fields: [
