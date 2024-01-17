@@ -34,7 +34,7 @@ defmodule TMI.IRC.Parsing.EventMapping do
     "subgift" => :sub_gift,
     "sub" => :sub,
     "giftpaidupgrade" => :gift_paid_upgrade,
-    #   "" => :prime_paid_upgrade,
+    "primepaidupgrade" => :prime_paid_upgrade,
     "raid" => :raid,
     "unraid" => :unraid,
     "communitypayforward" => :pay_it_forward,
