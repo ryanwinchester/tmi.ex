@@ -43,7 +43,7 @@ defmodule TMI.Event do
     chat_action: TMI.Events.ChatAction,
     whisper: TMI.Events.Whisper,
     cheermote: TMI.Events.Cheermote,
-    emote: TMI.Events.Emote,
+    emote_mode: TMI.Events.EmoteMode,
     mention: TMI.Events.Mention,
     setting_update: TMI.Events.SettingUpdate,
     follow: TMI.Events.Follow,
@@ -90,7 +90,8 @@ defmodule TMI.Event do
     user_auth_grant: TMI.Events.UserAuthGrant,
     user_auth_revoke: TMI.Events.UserAuthRevoke,
     user_update: TMI.Events.UserUpdate,
-    viewer_milestone: TMI.Events.ViewerMilestone
+    viewer_milestone: TMI.Events.ViewerMilestone,
+    unrecognized: TMI.Events.Unrecognized
   }
 
   @event_names Map.keys(@events)
@@ -123,6 +124,14 @@ defmodule TMI.Event do
   # For example, having events like `:highlighted_message` would be tedious to
   # match on all the different message variations instead of just having a
   # `Message` struct with a `:highlighted?` field.
+
+  def from_map(%{event: :emote_only_off} = params, extras) do
+    from_map_with_name(params, :emote_mode, Map.merge(extras, %{emote_only?: false}))
+  end
+
+  def from_map(%{event: :emote_only_on} = params, extras) do
+    from_map_with_name(params, :emote_mode, Map.merge(extras, %{emote_only?: true}))
+  end
 
   def from_map(%{event: :highlighted_message} = params, extras) do
     from_map_with_name(params, :message, Map.merge(extras, %{highlighted?: true}))

@@ -8,7 +8,7 @@ defmodule TMI.Handler do
   @callback handle_event(TMI.event()) :: any
 
   @callback handle_mention(message :: String.t(), sender :: String.t(), channel :: String.t()) ::
-  any
+              any
 
   ## IRC-related callbacks, you probably don't care about.
 

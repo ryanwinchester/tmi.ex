@@ -5,6 +5,7 @@ defmodule TMI.Events.SubGift do
   use TMI.Event,
     fields: [
       :id,
+      :channel,
       :channel_id,
       :plan,
       :system_message,
@@ -20,6 +21,7 @@ defmodule TMI.Events.SubGift do
       :cumulative_total,
       :display_name,
       :is_mod?,
+      :is_turbo?,
       :is_sub?,
       :is_vip?,
       :user_id,

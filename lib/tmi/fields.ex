@@ -503,6 +503,12 @@ defmodule TMI.Fields do
   @type thread_login :: String.t()
 
   @typedoc """
+  Not a tag in Twitch, it comes from IRC `arg`.
+  The name of the channel.
+  """
+  @type channel :: String.t()
+
+  @typedoc """
   Twitch IRC tag `room-id`.
   The ID of the channel.
   """
@@ -602,4 +608,16 @@ defmodule TMI.Fields do
   whether the tag is set to `true` or `false`).
   """
   @type is_vip? :: boolean()
+
+  ## Unrecognized stuff...
+
+  @typedoc """
+  Unrecognized tag strings from messages from the IRC client get dumped into here.
+  """
+  @type tag_string :: String.t()
+
+  @typedoc """
+  Unrecognized args from messages from the IRC client get dumped into here.
+  """
+  @type arg :: String.t()
 end

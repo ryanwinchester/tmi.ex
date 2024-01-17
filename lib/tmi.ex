@@ -304,6 +304,9 @@ defmodule TMI do
   # Convert the ExIRC message to bot message.
   # ----------------------------------------------------------------------------
 
+  # def parse_message(message) do
+  #   ed
+
   ## WITH tags
 
   # TODO: I think I will want to recursively parse the message args until I get

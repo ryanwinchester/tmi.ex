@@ -7,6 +7,7 @@ defmodule TMI.Events.Sub do
     fields: [
       :id,
       :channel_id,
+      :channel,
       :plan,
       :plan_name,
       :system_message,
@@ -26,6 +27,7 @@ defmodule TMI.Events.Sub do
       :login,
       :display_name,
       :is_mod?,
+      :is_turbo?,
       :is_sub?,
       :is_vip?,
       :user_id,

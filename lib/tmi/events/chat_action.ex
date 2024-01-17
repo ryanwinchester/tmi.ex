@@ -18,6 +18,7 @@ defmodule TMI.Events.ChatAction do
       :is_mod?,
       :is_turbo?,
       :is_sub?,
+      :is_vip?,
       :returning_chatter?,
       :channel_id,
       :timestamp,
