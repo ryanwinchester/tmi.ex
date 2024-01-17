@@ -1,4 +1,4 @@
-defmodule TMI.WhisperServer do
+defmodule TMI.IRC.WhisperServer do
   @moduledoc """
   A GenServer for Sending whispers at a specified rate.
 
@@ -19,8 +19,8 @@ defmodule TMI.WhisperServer do
 
   require Logger
 
-  alias TMI.Client
-  alias TMI.Conn
+  alias TMI.IRC.Client
+  alias TMI.IRC.Conn
 
   @default_rate_ms 625
 
@@ -125,7 +125,7 @@ defmodule TMI.WhisperServer do
         {:noreply, %{state | timer_ref: nil}}
 
       {{:value, {from, to, message}}, rest} ->
-        Client.command(state.conn, ['PRIVMSG ', from, ' :/w ', to, ' ', message])
+        Client.command(state.conn, [~c"PRIVMSG ", from, ~c" :/w ", to, ~c" ", message])
         Logger.debug("[WhisperServer] #{from} WHISPERED #{to}: #{message}")
         timer_ref = Process.send_after(self(), :send, state.rate)
         {:noreply, %{state | queue: rest, timer_ref: timer_ref}}

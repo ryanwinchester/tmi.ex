@@ -27,7 +27,12 @@ defmodule TMI.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:castore, "~> 1.0"},
       {:exirc, "~> 2.0"},
+      {:nimble_parsec, "~> 1.0"},
+      {:req, "~> 0.4"},
+
+      # Dev
       {:ex_doc, "~> 0.28", only: :dev, runtime: false}
     ]
   end

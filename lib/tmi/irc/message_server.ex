@@ -1,4 +1,4 @@
-defmodule TMI.MessageServer do
+defmodule TMI.IRC.MessageServer do
   @moduledoc """
   A GenServer for Sending messages at a specified rate to a single channel.
 
@@ -35,8 +35,8 @@ defmodule TMI.MessageServer do
 
   require Logger
 
-  alias TMI.Client
-  alias TMI.Conn
+  alias TMI.IRC.Client
+  alias TMI.IRC.Conn
 
   # The default is the general case for when the bot is not the broadcaster
   # or a moderator in a channel. 20 messages per 30 seconds works out to
@@ -48,7 +48,10 @@ defmodule TMI.MessageServer do
   # exactly 300ms delay. [1000 / (100 / 30)]
   @mod_rate_ms 300
 
-  @hibernate_after_ms 15 * 60 * 1000
+  # After a certain amount of inactivity, this process can hibernate, which
+  # should also trigger garbage collection. This value is arbitrarily set to
+  # be 5 minutes.
+  @hibernate_after_ms 5 * 60 * 1000
 
   # ----------------------------------------------------------------------------
   # Public API
