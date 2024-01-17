@@ -71,7 +71,9 @@ defmodule TMI.IRC.Parsing.EventMapping do
     #   "" => :user_auth_grant,
     #   "" => :user_auth_revoke,
     #   "" => :user_update,
-    "viewermilestone" => :viewer_milestone
+    "viewermilestone" => :viewer_milestone,
+    # WTF ಠ_ಠ
+    "msg_emoteonly" => :unrecognized
   }
 
   @doc """

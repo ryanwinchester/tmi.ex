@@ -217,7 +217,7 @@ defmodule TMI do
   end
 
   def default_handle_event(event, module) do
-    Logger.debug("[#{bot_string(module)}] [#{event.channel}] EVENT\n#{inspect(event, pretty: true)}")
+    Logger.debug("[#{bot_string(module)}] EVENT\n#{inspect(event, pretty: true)}")
   end
 
   @doc """
@@ -285,6 +285,36 @@ defmodule TMI do
   end
 
   @doc """
+  Parse a NOTICE message.
+
+  ## Example:
+
+      iex> args = "tmi.twitch.tv NOTICE #ryanwinchester_ :This room is no longer in emote-only mode."
+      iex> notice_args_to_map(args)
+      %{channel: "#ryanwinchester_"}
+
+  """
+  def notice_args_to_map(message) do
+    [_server, notice] = :binary.split(message, " NOTICE ")
+    [channel, _rest] = :binary.split(notice, " :")
+    %{channel: channel}
+  end
+
+  @doc """
+  Parse a ROOMSTATE message.
+
+  ## Example:
+
+      iex> roomstate_args_to_map("tmi.twitch.tv ROOMSTATE #ryanwinchester_")
+      %{channel: "#ryanwinchester_"}
+
+  """
+  def roomstate_args_to_map(message) do
+    [_server, channel] = :binary.split(message, " ROOMSTATE ")
+    %{channel: channel}
+  end
+
+  @doc """
   Parse Twitch tags, if they are enabled.
 
   ## Examples:
@@ -304,17 +334,11 @@ defmodule TMI do
   # Convert the ExIRC message to bot message.
   # ----------------------------------------------------------------------------
 
-  # def parse_message(message) do
-  #   ed
-
-  ## WITH tags
-
   # TODO: I think I will want to recursively parse the message args until I get
   # one of the `PRIVMSG`, `USERNOTICE`, etc. messages.
   # As it is now, if we get a message or system_msg or anything that has this
   # text, we could get unexpected results since `String.contains?/2` could match.
-  @doc false
-  def apply_incoming_to_bot({:unrecognized, tag_string, %ExIRC.Message{args: [arg]}}, bot) do
+  def parse_message({:unrecognized, tag_string, %ExIRC.Message{args: [arg]} = msg}) do
     cond do
       String.contains?(arg, "PRIVMSG") ->
         case message_args_to_map(arg) do
@@ -325,32 +349,49 @@ defmodule TMI do
               params
               | message: String.trim_trailing(message, <<0x01>>)
             })
-            |> bot.handle_event()
 
           params ->
             tag_string
             |> TMI.IRC.Tags.parse!()
             |> TMI.Event.from_map_with_name(:message, params)
-            |> bot.handle_event()
         end
 
       String.contains?(arg, "USERNOTICE") ->
         tag_string
         |> TMI.IRC.Tags.parse!()
         |> TMI.Event.from_map(usernotice_args_to_map(arg))
-        |> bot.handle_event()
+
+      String.contains?(arg, "NOTICE") ->
+        tag_string
+        |> TMI.IRC.Tags.parse!()
+        |> TMI.Event.from_map(notice_args_to_map(arg))
+
+      String.contains?(arg, "ROOMSTATE") ->
+        tag_string
+        |> TMI.IRC.Tags.parse!()
+        |> TMI.Event.from_map_with_name(:channel_update, roomstate_args_to_map(arg))
 
       String.contains?(arg, "WHISPER") ->
         tag_string
         |> TMI.IRC.Tags.parse!()
         |> TMI.Event.from_map_with_name(:whisper, whisper_args_to_map(arg))
-        |> bot.handle_event()
 
       true ->
         tag_string
         |> TMI.IRC.Tags.parse!()
-        |> bot.handle_unrecognized(arg)
+        |> TMI.Event.from_map_with_name(:unrecognized, %{msg: msg})
     end
+  end
+
+  def parse_message({:unrecognized, _cmd, %ExIRC.Message{} = msg}) do
+    TMI.Event.from_map_with_name(%{}, :unrecognized, %{msg: msg})
+  end
+
+  ## WITH tags
+
+  @doc false
+  def apply_incoming_to_bot({:unrecognized, _tag_string, %ExIRC.Message{}} = msg, bot) do
+    parse_message(msg) |> bot.handle_event()
   end
 
   ## Without tags

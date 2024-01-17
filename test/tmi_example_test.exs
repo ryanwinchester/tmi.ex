@@ -5,7 +5,15 @@ defmodule TMIExampleTest do
     test "emote_only_on" do
       message = {:unrecognized, "@msg-id=emote_only_on", %ExIRC.Message{server: [], nick: [], user: [], host: [], ctcp: false, cmd: "@msg-id=emote_only_on", args: ["tmi.twitch.tv NOTICE #spirodonfl :This room is now in emote-only mode."]}}
 
-      expected = %TMI.Events.EmoteMode{}
+      expected = %TMI.Events.EmoteMode{channel: "#spirodonfl", emote_only?: true}
+
+      assert TMI.parse_message(message) == expected
+    end
+
+    test "emote_only_off" do
+      message = {:unrecognized, "@msg-id=emote_only_off", %ExIRC.Message{server: [], nick: [], user: [], host: [], ctcp: false, cmd: "@msg-id=emote_only_off", args: ["tmi.twitch.tv NOTICE #spirodonfl :This room is no longer in emote-only mode."]}}
+
+      expected = %TMI.Events.EmoteMode{channel: "#spirodonfl", emote_only?: false}
 
       assert TMI.parse_message(message) == expected
     end
