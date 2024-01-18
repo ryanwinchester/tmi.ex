@@ -210,6 +210,16 @@ defmodule TMI do
   end
 
   @doc false
+  def default_handle_event(%TMI.Events.Message{highlighted?: true} = event, module) do
+    Logger.debug([
+      "[#{bot_string(module)}] [#{event.channel}] ",
+      IO.ANSI.magenta_background(),
+      IO.ANSI.black(),
+      "<#{event.user_login}> #{event.message}",
+      IO.ANSI.default_background()
+    ])
+  end
+
   def default_handle_event(%TMI.Events.Message{} = event, module) do
     Logger.debug(
       "[#{bot_string(module)}] [#{event.channel}] <#{event.user_login}> #{event.message}"

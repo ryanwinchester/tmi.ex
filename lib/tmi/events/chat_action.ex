@@ -13,7 +13,6 @@ defmodule TMI.Events.ChatAction do
       :login,
       :emotes,
       :first_message?,
-      :highlighted?,
       :message,
       :is_mod?,
       :is_turbo?,
