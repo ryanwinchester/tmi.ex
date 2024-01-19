@@ -58,6 +58,10 @@ defmodule MyBot do
 end
 ```
 
+## EventSub
+
+https://twitchapps.com/tokengen
+
 #### Available handler callbacks:
 
     handle_connected(server, port)

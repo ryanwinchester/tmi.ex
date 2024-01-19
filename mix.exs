@@ -31,6 +31,7 @@ defmodule TMI.MixProject do
       {:exirc, "~> 2.0"},
       {:nimble_parsec, "~> 1.0"},
       {:req, "~> 0.4"},
+      {:websockex, "~> 0.4.3"},
 
       # Dev
       {:ex_doc, "~> 0.28", only: :dev, runtime: false}

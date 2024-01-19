@@ -4,6 +4,41 @@ defmodule TMI.Fields do
   """
 
   @typedoc """
+  Found in TMI EventSub subscriptions `channel.shoutout.receive`.
+  """
+  @type broadcaster_user_id :: String.t()
+
+  @typedoc """
+  Found in TMI EventSub subscriptions `channel.shoutout.receive`.
+  """
+  @type broadcaster_user_login :: String.t()
+
+  @typedoc """
+  Found in TMI EventSub subscriptions `channel.shoutout.receive`.
+  """
+  @type broadcaster_user_name :: String.t()
+
+  @typedoc """
+  Found in TMI EventSub subscriptions `channel.shoutout.receive`.
+  """
+  @type from_broadcaster_user_id :: String.t()
+
+  @typedoc """
+  Found in TMI EventSub subscriptions `channel.shoutout.receive`.
+  """
+  @type from_broadcaster_user_login :: String.t()
+
+  @typedoc """
+  Found in TMI EventSub subscriptions `channel.shoutout.receive`.
+  """
+  @type from_broadcaster_user_name :: String.t()
+
+  @typedoc """
+  Found in TMI EventSub subscriptions `channel.shoutout.receive`.
+  """
+  @type started_at :: DateTime.t()
+
+  @typedoc """
   Twitch IRC tag `badge-info`.
   Contains metadata related to the chat badges in the badges tag. Currently,
   this tag contains metadata only for subscriber badges, to indicate the number
@@ -373,6 +408,7 @@ defmodule TMI.Fields do
 
   @typedoc """
   Twitch IRC tag `msg-param-viewerCount`.
+  Also found in EventSub subscriptions `channel.shoutout.receive` payload.
   Included only with `raid` notices.
   The number of viewers raiding this channel from the broadcaster’s channel.
   """
@@ -609,7 +645,7 @@ defmodule TMI.Fields do
    * `:global_mod` — A global moderator
    * `:staff` — A Twitch employee
    * `{:unknown, String.t()}` - Any types that don't match, since Twitch doesn't
-     fully document their stuff.
+   fully document their stuff.
   """
   @type user_type :: :normal | :mod | :admin | :global_mod | :staff | {:unknown, String.t()}
 

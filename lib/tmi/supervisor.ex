@@ -18,20 +18,23 @@ defmodule TMI.Supervisor do
 
   @impl true
   def init({bot, opts}) do
+    # IRC Bot config.
     {is_verified, opts} = Keyword.pop(opts, :is_verified, false)
     {mod_channels, opts} = Keyword.pop(opts, :mod_channels, [])
-
     {:ok, client} = TMI.IRC.Client.start_link(Keyword.take(opts, [:debug]))
     conn = build_irc_conn(client, opts)
-
     dynamic_supervisor = TMI.IRC.MessageServer.supervisor_name(bot)
+
+    # EventSub config.
+    eventsub_config = Application.fetch_env!(:abesai_bot, TMI.EventSub.Socket)
 
     children = [
       {DynamicSupervisor, strategy: :one_for_one, name: dynamic_supervisor},
       {TMI.IRC.ChannelServer, {bot, conn, is_verified, mod_channels}},
       {TMI.IRC.ConnectionServer, {bot, conn}},
       {TMI.IRC.WhisperServer, {bot, conn}},
-      {bot, conn}
+      {bot, conn},
+      {TMI.EventSub.Socket, eventsub_config}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
