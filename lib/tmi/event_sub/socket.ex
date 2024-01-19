@@ -38,9 +38,19 @@ defmodule TMI.EventSub.Socket do
    * `:url` - A websocket URL to connect to. `Defaults to "wss://eventsub.wss.twitch.tv/ws"`.
    * `:keepalive_timeout` - The keepalive timeout in seconds. Specifying an invalid,
       but numeric value will return the nearest acceptable value. Defaults to `10`.
+   * `:start?` - A boolean value of whether or not to start the eventsub socket.
 
   """
+  @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts) do
+    if Keyword.get(opts, :start?, true) do
+      do_start(opts)
+    else
+      :ignore
+    end
+  end
+
+  defp do_start(opts) do
     Logger.info("[TMI.EventSub.Socket] connecting...")
 
     if not Enum.all?(@required_opts, &Keyword.has_key?(opts, &1)) do
@@ -212,7 +222,11 @@ defmodule TMI.EventSub.Socket do
   #         }
   #     }
   #
-  defp handle_message(%{"message_type" => "notification", "subscription_type" => type}, %{"event" => payload}, state) do
+  defp handle_message(
+         %{"message_type" => "notification", "subscription_type" => type},
+         %{"event" => payload},
+         state
+       ) do
     Logger.debug("[TMI.EventSub.Socket] got notification: " <> inspect(payload, pretty: true))
 
     type
