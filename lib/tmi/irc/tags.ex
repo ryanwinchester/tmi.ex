@@ -92,6 +92,36 @@ defmodule TMI.IRC.Tags do
     {tag_name(key), plan}
   end
 
+  defp tag_map({"msg-param-gift-theme" = key, val}) do
+    plan =
+      case val do
+        nil ->
+          nil
+
+        "love" ->
+          :love
+
+        "party" ->
+          :party
+
+        "lul" ->
+          :lul
+
+        "biblethump" ->
+          :biblethump
+
+        theme ->
+          Logger.warning("""
+          [TMI.IRC.Tags] You found an unsupported gift theme: `#{inspect(theme)}`
+          Please report it as an issue at: <https://github.com/ryanwinchester/tmi.ex>
+          """)
+
+          {:unknown, theme}
+      end
+
+    {tag_name(key), plan}
+  end
+
   defp tag_map({"msg-param-category" = key, val}) do
     milestone =
       case val do
@@ -100,7 +130,7 @@ defmodule TMI.IRC.Tags do
 
         milestone ->
           Logger.warning("""
-          [TMI.Fields.TagParser] You found an unsupported milestone: `#{inspect(milestone)}`
+          [TMI.IRC.Tags] You found an unsupported milestone: `#{inspect(milestone)}`
           Please report it as an issue at: <https://github.com/ryanwinchester/tmi.ex>
           """)
 

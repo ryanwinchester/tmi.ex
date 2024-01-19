@@ -235,6 +235,19 @@ defmodule TMI.Fields do
   @type gift_months :: non_neg_integer()
 
   @typedoc """
+  Twitch IRC tag `msg-param-gift-theme`.
+  Included with `subgift` and `communitysubgift` notices.
+  Available themes are:
+   * `nil` (none)
+   * `:love`
+   * `:party
+   * `:lul`
+   * `:biblethump`
+   * `{:unknown, String.t()}`
+  """
+  @type gift_theme :: nil | :love | :party | :lul | :biblethump | {:unkown, String.t()}
+
+  @typedoc """
   Twitch IRC tag `msg-param-mass-gift-count`.
   The number of subs in a community `submysterygift`.
   Also used for `msg-param-value` which I found in the milestone event for

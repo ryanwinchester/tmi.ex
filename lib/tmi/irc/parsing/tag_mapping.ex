@@ -29,6 +29,7 @@ defmodule TMI.IRC.Parsing.TagMapping do
     "msg-param-cumulative-months" => :cumulative_months,
     "msg-param-displayName" => :display_name,
     "msg-param-gift-months" => :gift_months,
+    "msg-param-gift-theme" => :gift_theme,
     "msg-param-goal-contribution-type" => :goal_type,
     "msg-param-goal-current-contributions" => :goal_current,
     "msg-param-goal-description" => :goal_description,

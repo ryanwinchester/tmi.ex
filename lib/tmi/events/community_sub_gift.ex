@@ -35,7 +35,7 @@ defmodule TMI.Events.CommunitySubGift do
       :user_id,
       :user_type,
       :cumulative_months,
-      :gift_months,
+      :gift_theme,
       :plan_name,
       :recipient_display_name,
       :recipient_id,

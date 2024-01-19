@@ -11,6 +11,7 @@ defmodule TMI.Events.SubGift do
       :system_message,
       :timestamp,
       :gift_months,
+      :gift_theme,
       :is_anon?,
       :plan_name,
       # --- user fields ---
