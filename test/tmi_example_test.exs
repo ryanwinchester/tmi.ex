@@ -15,7 +15,7 @@ defmodule TMIExampleTest do
            args: ["tmi.twitch.tv NOTICE #spirodonfl :This room is now in emote-only mode."]
          }}
 
-      expected = %TMI.Events.EmoteMode{channel: "#spirodonfl", emote_only?: true}
+      expected = %TMI.Chat.Events.EmoteMode{channel: "#spirodonfl", emote_only?: true}
 
       assert TMI.parse_message(message) == expected
     end
@@ -33,7 +33,7 @@ defmodule TMIExampleTest do
            args: ["tmi.twitch.tv NOTICE #spirodonfl :This room is no longer in emote-only mode."]
          }}
 
-      expected = %TMI.Events.EmoteMode{channel: "#spirodonfl", emote_only?: false}
+      expected = %TMI.Chat.Events.EmoteMode{channel: "#spirodonfl", emote_only?: false}
 
       assert TMI.parse_message(message) == expected
     end
@@ -55,7 +55,7 @@ defmodule TMIExampleTest do
            args: ["tmi.twitch.tv USERNOTICE #spirodonfl"]
          }}
 
-      expected = %TMI.Events.CommunitySubGift{
+      expected = %TMI.Chat.Events.CommunitySubGift{
         badge_info: [{"subscriber", 1}],
         badges: [{"subscriber", 0}, {"premium", 1}],
         channel: "#spirodonfl",
@@ -110,7 +110,7 @@ defmodule TMIExampleTest do
            args: ["tmi.twitch.tv USERNOTICE #spirodonfl"]
          }}
 
-      expected = %TMI.Events.PayItForward{
+      expected = %TMI.Chat.Events.PayItForward{
         badge_info: [{"subscriber", 1}],
         badges: [{"subscriber", 0}, {"premium", 1}],
         channel: "#spirodonfl",
@@ -154,7 +154,7 @@ defmodule TMIExampleTest do
            args: ["tmi.twitch.tv USERNOTICE #spirodonfl"]
          }}
 
-      expected = %TMI.Events.SubGift{
+      expected = %TMI.Chat.Events.SubGift{
         badge_info: [{"subscriber", 1}],
         badges: [{"subscriber", 0}, {"sub-gift-leader", 2}],
         channel: "#spirodonfl",
@@ -202,7 +202,7 @@ defmodule TMIExampleTest do
            args: ["tmi.twitch.tv USERNOTICE #spirodonfl"]
          }}
 
-      expected = %TMI.Events.Sub{
+      expected = %TMI.Chat.Events.Sub{
         badge_info: [{"subscriber", 1}],
         badges: [{"subscriber", 0}, {"sub-gifter", 100}],
         channel: "#spirodonfl",
@@ -251,7 +251,7 @@ defmodule TMIExampleTest do
            args: ["tmi.twitch.tv USERNOTICE #spirodonfl"]
          }}
 
-      expected = %TMI.Events.Raid{
+      expected = %TMI.Chat.Events.Raid{
         badge_info: [{"subscriber", 1}],
         badges: [{"subscriber", 0}],
         channel: "#spirodonfl",

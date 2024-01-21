@@ -6,32 +6,32 @@ defmodule TMI.Fields do
   @typedoc """
   Found in TMI EventSub subscriptions `channel.shoutout.receive`.
   """
-  @type broadcaster_user_id :: String.t()
+  @type broadcaster_id :: user_id()
 
   @typedoc """
   Found in TMI EventSub subscriptions `channel.shoutout.receive`.
   """
-  @type broadcaster_user_login :: String.t()
+  @type broadcaster_name :: String.t()
 
   @typedoc """
   Found in TMI EventSub subscriptions `channel.shoutout.receive`.
   """
-  @type broadcaster_user_name :: String.t()
+  @type from_broadcaster_user_id :: user_id()
 
   @typedoc """
   Found in TMI EventSub subscriptions `channel.shoutout.receive`.
   """
-  @type from_broadcaster_user_id :: String.t()
+  @type from_channel :: channel()
+
+  @typedoc """
+  Found in TMI EventSub subscriptions `channel.follow`.
+  """
+  @type followed_at :: DateTime.t()
 
   @typedoc """
   Found in TMI EventSub subscriptions `channel.shoutout.receive`.
   """
-  @type from_broadcaster_user_login :: String.t()
-
-  @typedoc """
-  Found in TMI EventSub subscriptions `channel.shoutout.receive`.
-  """
-  @type from_broadcaster_user_name :: String.t()
+  @type from_broadcaster_name :: String.t()
 
   @typedoc """
   Found in TMI EventSub subscriptions `channel.shoutout.receive`.

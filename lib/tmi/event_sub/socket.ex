@@ -109,6 +109,17 @@ defmodule TMI.EventSub.Socket do
     {:reply, frame, state}
   end
 
+  @impl true
+  def handle_info({:delayed_event, event}, state) do
+    state.handler.handle_event(event)
+    {:ok, state}
+  end
+
+  @impl true
+  def terminate(close_reason, _state) do
+    Logger.error("[TMI.EventSub.Socket] terminating #{inspect(close_reason)}")
+  end
+
   # ----------------------------------------------------------------------------
   # Helpers
   # ----------------------------------------------------------------------------
@@ -231,6 +242,7 @@ defmodule TMI.EventSub.Socket do
 
     type
     |> TMI.EventSub.Events.from_payload(payload)
+    |> add_delayed_event()
     |> state.handler.handle_event()
   end
 
@@ -344,4 +356,34 @@ defmodule TMI.EventSub.Socket do
     # TODO: match ^
     Logger.error("[TMI.EventSub.Socket] closed: #{inspect(payload)}")
   end
+
+  # Delayed events are events we create based on other events that have some
+  # sort of timed effect. For example `AdBreakBegin` has a `duration_seconds`
+  # property, but we do not have an `AdBreakEnd` event.
+  # So, we can use the ad-break duration to create our own `AdBreakEnd` event.
+  # This is exactly what we do.
+  defp add_delayed_event(%TMI.EventSub.Events.AdBreakBegin{} = event) do
+    ad_break_end = struct(TMI.EventSub.Events.AdBreakEnd, Map.from_struct(event))
+    Process.send_after(self(), {:delayed_event, ad_break_end}, event.duration_seconds * 1000)
+    event
+  end
+
+  defp add_delayed_event(%TMI.EventSub.Events.ShoutoutCreate{} = event) do
+    cooldown_end = struct(TMI.EventSub.Events.ShoutoutCooldownEnd, Map.from_struct(event))
+
+    cooldown_target_end =
+      struct(TMI.EventSub.Events.ShoutoutCooldownTargetEnd, Map.from_struct(event))
+
+    cooldown_duration = DateTime.diff(event.cooldown_ends_at, DateTime.utc_now(), :millisecond)
+
+    cooldown_target_duration =
+      DateTime.diff(event.target_cooldown_ends_at, DateTime.utc_now(), :millisecond)
+
+    Process.send_after(self(), {:delayed_event, cooldown_end}, cooldown_duration)
+    Process.send_after(self(), {:delayed_event, cooldown_target_end}, cooldown_target_duration)
+
+    event
+  end
+
+  defp add_delayed_event(event), do: event
 end

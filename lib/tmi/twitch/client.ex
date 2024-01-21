@@ -5,7 +5,8 @@ defmodule TMI.Twitch.Client do
 
   require Logger
 
-  @base_url "https://api.twitch.tv"
+  @base_url "https://api.twitch.tv/helix"
+  # @base_url "http://127.0.0.1:8080"
 
   @subscriptions %{
     "channel.update" => 2,
@@ -113,7 +114,7 @@ defmodule TMI.Twitch.Client do
 
     resp =
       client(client_id, access_token)
-      |> Req.post(url: "/helix/eventsub/subscriptions", json: params)
+      |> Req.post(url: "/eventsub/subscriptions", json: params)
 
     case resp do
       {:ok, %{status: 202, headers: _headers, body: body}} ->
@@ -140,7 +141,7 @@ defmodule TMI.Twitch.Client do
   def list_subscriptions(client_id, access_token, params \\ %{}) do
     resp =
       client(client_id, access_token)
-      |> Req.get(url: "/helix/eventsub/subscriptions", json: params)
+      |> Req.get(url: "/eventsub/subscriptions", json: params)
 
     case resp do
       {:ok, %{status: 200, headers: _headers, body: body}} ->

@@ -12,17 +12,17 @@ defmodule TMI do
 
       @behaviour TMI.Handler
 
-      @spec start_link(TMI.IRC.Conn.t()) :: GenServer.on_start()
+      @spec start_link(TMI.Chat.Conn.t()) :: GenServer.on_start()
       def start_link(conn) do
         GenServer.start_link(__MODULE__, conn, name: __MODULE__)
       end
 
       def join(channel) do
-        TMI.IRC.ChannelServer.join(__MODULE__, channel)
+        TMI.Chat.ChannelServer.join(__MODULE__, channel)
       end
 
       def part(channel) do
-        TMI.IRC.ChannelServer.part(__MODULE__, channel)
+        TMI.Chat.ChannelServer.part(__MODULE__, channel)
       end
 
       def me(channel, message) do
@@ -30,7 +30,7 @@ defmodule TMI do
       end
 
       def say(channel, message) do
-        TMI.IRC.MessageServer.add_message(__MODULE__, channel, message)
+        TMI.Chat.MessageServer.add_message(__MODULE__, channel, message)
       end
 
       def whisper(user, message) do
@@ -38,7 +38,7 @@ defmodule TMI do
       end
 
       def list_channels do
-        TMI.IRC.ChannelServer.list_channels(__MODULE__)
+        TMI.Chat.ChannelServer.list_channels(__MODULE__)
       end
 
       @spec connected?() :: boolean()
@@ -55,17 +55,17 @@ defmodule TMI do
 
       @impl GenServer
       def init(conn) do
-        TMI.IRC.Client.add_handler(conn, self())
+        TMI.Chat.Client.add_handler(conn, self())
         {:ok, conn}
       end
 
       @impl GenServer
       def handle_call(:connected?, _from, conn) do
-        {:reply, TMI.IRC.Client.is_connected?(conn), conn}
+        {:reply, TMI.Chat.Client.is_connected?(conn), conn}
       end
 
       def handle_call(:logged_in?, _from, conn) do
-        case TMI.IRC.Client.is_logged_on?(conn) do
+        case TMI.Chat.Client.is_logged_on?(conn) do
           {:error, :not_connected} ->
             {:reply, false, conn}
 
@@ -76,22 +76,22 @@ defmodule TMI do
 
       @impl GenServer
       def handle_cast({:kick, channel, user, message}, conn) do
-        TMI.IRC.Client.kick(conn, channel, user, message)
+        TMI.Chat.Client.kick(conn, channel, user, message)
         {:noreply, conn}
       end
 
       def handle_cast({:me, channel, message}, conn) do
-        TMI.IRC.Client.me(conn, channel, message)
+        TMI.Chat.Client.me(conn, channel, message)
         {:noreply, conn}
       end
 
       def handle_cast({:part, channel}, conn) do
-        TMI.IRC.Client.part(conn, channel)
+        TMI.Chat.Client.part(conn, channel)
         {:noreply, conn}
       end
 
       def handle_cast({:whisper, to, message}, conn) do
-        TMI.IRC.WhisperServer.add_whisper(__MODULE__, conn.user, to, message)
+        TMI.Chat.WhisperServer.add_whisper(__MODULE__, conn.user, to, message)
         {:noreply, conn}
       end
 
@@ -210,7 +210,7 @@ defmodule TMI do
   end
 
   @doc false
-  def default_handle_event(%TMI.Events.Message{highlighted?: true} = event, module) do
+  def default_handle_event(%TMI.Chat.Events.Message{highlighted?: true} = event, module) do
     Logger.debug([
       "[#{bot_string(module)}] [#{event.channel}] ",
       IO.ANSI.magenta_background(),
@@ -220,23 +220,27 @@ defmodule TMI do
     ])
   end
 
-  def default_handle_event(%TMI.Events.Message{} = event, module) do
+  def default_handle_event(%TMI.Chat.Events.Message{} = event, module) do
     Logger.debug(
       "[#{bot_string(module)}] [#{event.channel}] <#{event.user_login}> #{event.message}"
     )
   end
 
-  def default_handle_event(%TMI.Events.ChatAction{} = event, module) do
+  def default_handle_event(%TMI.Chat.Events.ChatAction{} = event, module) do
     Logger.debug(
       "[#{bot_string(module)}] [#{event.channel}] * <#{event.user_id}> #{event.message}"
     )
   end
 
-  def default_handle_event(%TMI.Events.Whisper{} = event, module) do
+  def default_handle_event(%TMI.Chat.Events.Whisper{} = event, module) do
     Logger.debug("[#{bot_string(module)}] WHISPER - <#{event.user_login}> #{event.message}")
   end
 
-  def default_handle_event(%TMI.Events.Unrecognized{msg: %ExIRC.Message{} = msg}, module) do
+  def default_handle_event(%TMI.Chat.Events.Unrecognized{msg: %ExIRC.Message{} = msg}, module) do
+    Logger.debug("[#{bot_string(module)}] [#{msg.cmd}] #{inspect(msg.args)}")
+  end
+
+  def default_handle_event(%TMI.EventSub.Events.Unrecognized{msg: %ExIRC.Message{} = msg}, module) do
     Logger.debug("[#{bot_string(module)}] [#{msg.cmd}] #{inspect(msg.args)}")
   end
 
@@ -352,7 +356,7 @@ defmodule TMI do
       }
 
   """
-  def parse_tags(tag_string), do: TMI.IRC.Tags.parse!(tag_string)
+  def parse_tags(tag_string), do: TMI.Chat.Tags.parse!(tag_string)
 
   # ----------------------------------------------------------------------------
   # Convert the ExIRC message to bot message.
@@ -368,52 +372,52 @@ defmodule TMI do
         case message_args_to_map(arg) do
           %{message: <<0x01, "ACTION ", message::binary>>} = params ->
             tag_string
-            |> TMI.IRC.Tags.parse!()
-            |> TMI.Event.from_map_with_name(:chat_action, %{
+            |> TMI.Chat.Tags.parse!()
+            |> TMI.Chat.Events.from_map_with_name(:chat_action, %{
               params
               | message: String.trim_trailing(message, <<0x01>>)
             })
 
           params ->
             tag_string
-            |> TMI.IRC.Tags.parse!()
+            |> TMI.Chat.Tags.parse!()
             |> tap(fn tags ->
               if Map.get(tags, "custom-reward-id") do
                 IO.inspect(msg, pretty: true)
               end
             end)
-            |> TMI.Event.from_map_with_name(:message, params)
+            |> TMI.Chat.Events.from_map_with_name(:message, params)
         end
 
       String.contains?(arg, "USERNOTICE") ->
         tag_string
-        |> TMI.IRC.Tags.parse!()
-        |> TMI.Event.from_map(usernotice_args_to_map(arg))
+        |> TMI.Chat.Tags.parse!()
+        |> TMI.Chat.Events.from_map(usernotice_args_to_map(arg))
 
       String.contains?(arg, "NOTICE") ->
         tag_string
-        |> TMI.IRC.Tags.parse!()
-        |> TMI.Event.from_map(notice_args_to_map(arg))
+        |> TMI.Chat.Tags.parse!()
+        |> TMI.Chat.Events.from_map(notice_args_to_map(arg))
 
       String.contains?(arg, "ROOMSTATE") ->
         tag_string
-        |> TMI.IRC.Tags.parse!()
-        |> TMI.Event.from_map_with_name(:channel_update, roomstate_args_to_map(arg))
+        |> TMI.Chat.Tags.parse!()
+        |> TMI.Chat.Events.from_map_with_name(:channel_update, roomstate_args_to_map(arg))
 
       String.contains?(arg, "WHISPER") ->
         tag_string
-        |> TMI.IRC.Tags.parse!()
-        |> TMI.Event.from_map_with_name(:whisper, whisper_args_to_map(arg))
+        |> TMI.Chat.Tags.parse!()
+        |> TMI.Chat.Events.from_map_with_name(:whisper, whisper_args_to_map(arg))
 
       true ->
         tag_string
-        |> TMI.IRC.Tags.parse!()
-        |> TMI.Event.from_map_with_name(:unrecognized, %{msg: msg})
+        |> TMI.Chat.Tags.parse!()
+        |> TMI.Chat.Events.from_map_with_name(:unrecognized, %{msg: msg})
     end
   end
 
   def parse_message({:unrecognized, _cmd, %ExIRC.Message{} = msg}) do
-    TMI.Event.from_map_with_name(%{}, :unrecognized, %{msg: msg})
+    TMI.Chat.Events.from_map_with_name(%{}, :unrecognized, %{msg: msg})
   end
 
   ## WITH tags
