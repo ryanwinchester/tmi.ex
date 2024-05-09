@@ -28,7 +28,7 @@ defmodule TMI.Conn do
 
       iex> TMI.Conn.new(:some_pid, "user", "pass", ["mychannel"], [])
       %TMI.Conn{
-        server: "irc.channel.twitch.tv",
+        server: "irc.chat.twitch.tv",
         port: 6697,
         user: "user",
         pass: "pass",

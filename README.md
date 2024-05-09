@@ -1,8 +1,8 @@
 # TMI (Twitch Messaging Interface) for Elixir
 
 [![Hex.pm](https://img.shields.io/hexpm/v/tmi)](https://hex.pm/packages/tmi)
- [![Hex.pm](https://img.shields.io/hexpm/dt/tmi)](https://hex.pm/packages/tmi)
- [![Hex.pm](https://img.shields.io/hexpm/l/tmi)](https://github.com/ryanwinchester/tmi.ex/blob/main/LICENSE)
+[![Hex.pm](https://img.shields.io/hexpm/dt/tmi)](https://hex.pm/packages/tmi)
+[![Hex.pm](https://img.shields.io/hexpm/l/tmi)](https://github.com/ryanwinchester/tmi.ex/blob/main/LICENSE)
 
 Connect to Twitch chat with Elixir.
 
@@ -13,7 +13,7 @@ The package can be installed by adding `tmi` to your list of dependencies in `mi
 ```elixir
 def deps do
   [
-    {:tmi, "~> 0.6.0"},
+    {:tmi, "~> 0.7.0"},
   ]
 end
 ```
@@ -83,12 +83,12 @@ First we need to go over the config options.
 
 #### Config options
 
- * `:bot` - The module that `use`s `TMI` and implements the `TMI.Handler` behaviour.
- * `:user` - Twitch username of your bot user (lowercase).
- * `:pass` - OAuth token to use as a password, prefixed with `oauth:`.
- * `:channels` - The list of channels to join (lowercase).
- * `:mod_channels` - The list of channels where your bot is a moderator
-   (this effects the message and command rate limits).
+- `:bot` - The module that `use`s `TMI` and implements the `TMI.Handler` behaviour.
+- `:user` - Twitch username of your bot user (lowercase).
+- `:pass` - OAuth token to use as a password, prefixed with `oauth:`.
+- `:channels` - The list of channels to join (lowercase).
+- `:mod_channels` - The list of channels where your bot is a moderator
+  (this effects the message and command rate limits).
 
 #### Example config
 

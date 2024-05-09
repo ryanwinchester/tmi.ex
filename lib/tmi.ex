@@ -229,7 +229,7 @@ defmodule TMI do
 
   ## Example:
 
-      iex> parse_message("johndoe!johndoe@johndoe.tmi.twitch.tv PRIVMSG #johndoe :Hello World")
+      iex> parse_message("shyryan!johndoe@johndoe.tmi.twitch.tv PRIVMSG #shyryan :Hello World")
       {"Hello World", "shyryan", "#shyryan"}
 
   """
@@ -270,11 +270,11 @@ defmodule TMI do
       }
 
   """
-  def parse_tags(tags) do
-    tags
-    |> String.split(";")
-    |> Enum.map(&String.split(&1, "="))
-    |> Enum.into(%{}, &List.to_tuple/1)
+  def parse_tags(tag_string) do
+    tag_string
+    |> :binary.split(";", [:global])
+    |> Enum.map(&:binary.split(&1, "="))
+    |> Map.new(&List.to_tuple/1)
   end
 
   # ----------------------------------------------------------------------------
